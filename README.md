@@ -1,54 +1,56 @@
-# Customers — Full-stack Customer Management App
+# Customer Management Web App
 
-A polished, production-grade full-stack web application for managing customers and their identity documents.
+A polished, full-stack customer management system built as a recruiter assignment.
 
-## Tech Stack
+**Stack:** Next.js 14 · React 18 · TypeScript · Redux Toolkit + Redux Saga · Antd 5 · react-hook-form + zod · Node.js · Express · Mongoose · JWT · MongoDB Atlas
 
-| Layer    | Tech                                                                                       |
-|----------|--------------------------------------------------------------------------------------------|
-| Frontend | Next.js 14 (App Router), TypeScript, Redux Toolkit + Redux Saga, Antd 5, react-hook-form |
-| Backend  | Node.js, Express, TypeScript, Mongoose, JWT, Zod, Swagger                                 |
-| Database | MongoDB Atlas M0 (free)                                                                    |
-| Hosting  | Railway.app (BE) + Vercel (FE)                                                             |
+## Quick start (local)
 
-## Project Structure
+```bash
+# 1. Install everything
+npm install
+
+# 2. Start the API (in-memory MongoDB, no Atlas needed)
+npm run dev:be --workspace back-end -- --  # OR
+cd back-end && npm run dev:memory
+
+# 3. Start the web app
+npm run dev:fe
+
+# 4. Open http://localhost:3000 → log in with admin@example.com / Admin@123
+```
+
+See [`docs/DEPLOY.md`](./docs/DEPLOY.md) for production deployment (Atlas + Railway + Vercel).
+
+## Structure
 
 ```
 customers/
-├── back-end/         # Express API (TypeScript)
-├── front-end/        # Next.js app (TypeScript)
-├── docs/             # Documentation
+├── back-end/         # Express + TypeScript API
+├── front-end/        # Next.js + Antd web app
+├── docs/             # Deployment guide
 └── plans/            # Implementation plan
 ```
 
-## Quick Start
-
-```bash
-# 1. Install dependencies (workspaces)
-npm install
-
-# 2. Set up environment
-cp back-end/.env.example back-end/.env
-cp front-end/.env.example front-end/.env.local
-
-# 3. Run in development (two terminals)
-npm run dev:be     # http://localhost:4000
-npm run dev:fe     # http://localhost:3000
-```
-
-## Documentation
-
-- **Backend setup**: see [`back-end/README.md`](./back-end/README.md)
-- **Frontend setup**: see [`front-end/README.md`](./front-end/README.md)
-- **API docs**: `http://localhost:4000/api/docs` (Swagger UI, after running BE)
-- **Implementation plan**: see [`plans/customer-management-app/`](./plans/customer-management-app/plan.md)
-
 ## Features
 
-- Mock authentication (JWT access + refresh)
-- Customer list with pagination, search, sort
-- Customer create / edit / view
-- Multiple identity documents per customer (one per type)
-- Form validation (zod, shared between FE and BE)
-- Responsive UI, loading states, error handling
-- Swagger API documentation
+- Mock authentication (JWT access + refresh, hashed tokens, rotation + reuse detection)
+- Customer list with pagination, debounced search, sortable columns
+- Customer create / view / edit / soft-delete
+- Each customer can hold **multiple** identity documents (CCCD, Driver License, Passport) — one per type
+- Form validation (zod) shared shape between FE and BE
+- Auto-refresh of access tokens on 401 with request queueing
+- Centralized error handling, request id, structured logging
+- Rate limiting, helmet, CORS
+- Swagger UI for the API (`/api/docs`)
+
+## Tech choices
+
+- **State management**: Redux Toolkit + Redux Saga for explicit async flow, redux-persist for `auth` slice (so refresh keeps you logged in)
+- **Forms**: react-hook-form (perf) + zod (single source of truth for FE + BE validation)
+- **UI**: Antd 5 with custom light professional theme; CSS-in-JS so no global CSS fights
+- **Backend**: Express + Mongoose with feature-based module structure (`modules/<feature>/{model,repository,service,controller,routes,schema,dto}`)
+- **Validation**: zod everywhere, with shared shape between FE & BE
+- **Auth**: short-lived access (15m) + long-lived refresh (7d) with rotation; refresh tokens stored **hashed** in DB; reuse-detection purges all sessions
+
+See [`back-end/README.md`](./back-end/README.md) and [`front-end/README.md`](./front-end/README.md) for details.

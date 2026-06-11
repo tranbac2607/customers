@@ -8,7 +8,6 @@ import { hashPassword } from '@/utils/password';
 let mongo: MongoMemoryServer;
 let app: ReturnType<typeof createApp>;
 let token: string;
-let userId: string;
 
 const VALID_CUSTOMER = {
   fullName: 'Nguyen Van A',
@@ -34,13 +33,12 @@ beforeAll(async () => {
   await mongoose.connect(mongo.getUri());
 
   const passwordHash = await hashPassword('Admin@123');
-  const admin = await authRepository.create({
+  await authRepository.create({
     email: 'admin@example.com',
     passwordHash,
     name: 'Admin',
     role: 'admin',
   });
-  userId = admin._id.toString();
 
   app = createApp();
   const login = await request(app)

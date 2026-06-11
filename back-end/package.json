@@ -12,7 +12,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "typecheck": "tsc --noEmit",
-    "test": "jest --runInBand --passWithNoTests",
+    "test": "jest --runInBand",
     "seed": "tsx -r dotenv/config src/db/seed.ts",
     "seed:memory": "tsx src/db/seed.memory.ts"
   },
