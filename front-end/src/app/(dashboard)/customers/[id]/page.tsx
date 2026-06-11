@@ -42,7 +42,9 @@ export default function CustomerDetailPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { item, loading, error } = useAppSelector((s) => s.customers.current);
-  const mutationLoading = useAppSelector((s) => s.customers.mutation.loading);
+  const { loading: mutationLoading, error: mutationError } = useAppSelector(
+    (s) => s.customers.mutation,
+  );
 
   useEffect(() => {
     if (id) dispatch(getRequest(id));
@@ -55,12 +57,6 @@ export default function CustomerDetailPage() {
     dispatch(deleteRequest(id!));
   };
 
-  useEffect(() => {
-    if (!mutationLoading && !error) {
-      // navigate handled here when deletion succeeds — listItems shrink
-    }
-  }, [mutationLoading, error]);
-
   // Watch for item disappearing from list (after delete)
   useEffect(() => {
     if (!loading && !item && !error) {
@@ -69,6 +65,13 @@ export default function CustomerDetailPage() {
       router.replace('/customers');
     }
   }, [loading, item, error, router]);
+
+  // Toast on delete failure
+  useEffect(() => {
+    if (mutationError) {
+      toast.error(mutationError);
+    }
+  }, [mutationError]);
 
   if (loading && !item) {
     return <Skeleton active paragraph={{ rows: 10 }} />;
@@ -168,21 +171,56 @@ export default function CustomerDetailPage() {
               <UserOutlined /> Main information
             </Title>
             <Descriptions column={{ xs: 1, sm: 2 }} bordered size="small">
-              <Descriptions.Item label={<><CalendarOutlined /> Date of birth</>}>
+              <Descriptions.Item
+                label={
+                  <>
+                    <CalendarOutlined /> Date of birth
+                  </>
+                }
+              >
                 {dayjs(item.dateOfBirth).format('MMMM D, YYYY')} ({age} years)
               </Descriptions.Item>
-              <Descriptions.Item label="Gender">{GENDER_LABELS[item.gender] ?? item.gender}</Descriptions.Item>
-              <Descriptions.Item label={<><GlobalOutlined /> Nationality</>}>
+              <Descriptions.Item label="Gender">
+                {GENDER_LABELS[item.gender] ?? item.gender}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <>
+                    <GlobalOutlined /> Nationality
+                  </>
+                }
+              >
                 {item.nationality}
               </Descriptions.Item>
               <Descriptions.Item label="Occupation">{item.occupation}</Descriptions.Item>
-              <Descriptions.Item label={<><PhoneOutlined /> Phone</>} span={2}>
+              <Descriptions.Item
+                label={
+                  <>
+                    <PhoneOutlined /> Phone
+                  </>
+                }
+                span={2}
+              >
                 {item.phone}
               </Descriptions.Item>
-              <Descriptions.Item label={<><MailOutlined /> Email</>} span={2}>
+              <Descriptions.Item
+                label={
+                  <>
+                    <MailOutlined /> Email
+                  </>
+                }
+                span={2}
+              >
                 {item.email}
               </Descriptions.Item>
-              <Descriptions.Item label={<><HomeOutlined /> Address</>} span={2}>
+              <Descriptions.Item
+                label={
+                  <>
+                    <HomeOutlined /> Address
+                  </>
+                }
+                span={2}
+              >
                 {item.address}
               </Descriptions.Item>
             </Descriptions>

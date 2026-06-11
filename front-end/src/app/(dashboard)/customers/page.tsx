@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -24,12 +24,10 @@ import {
   ReloadOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { PAGE_SIZE_OPTIONS } from '@/lib/constants';
-import {
-  deleteRequest,
-  listRequest,
-} from '@/features/customers/customersSlice';
+import { deleteRequest, listRequest } from '@/features/customers/customersSlice';
 import type { Customer } from '@/features/customers/customerTypes';
 import dayjs from 'dayjs';
 
@@ -39,6 +37,7 @@ export default function CustomersPage() {
   const dispatch = useAppDispatch();
   const { items, loading, pagination, lastQuery } = useAppSelector((s) => s.customers.list);
   const mutationLoading = useAppSelector((s) => s.customers.mutation.loading);
+  const mutationError = useAppSelector((s) => s.customers.mutation.error);
 
   const [search, setSearch] = useState(lastQuery.search ?? '');
   const [page, setPage] = useState(lastQuery.page);
@@ -61,6 +60,17 @@ export default function CustomersPage() {
     fetchList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Toast on delete success / failure (detect loading transition)
+  const prevMutationLoading = useRef(false);
+  useEffect(() => {
+    if (prevMutationLoading.current && !mutationLoading && !mutationError) {
+      toast.success('Customer deleted');
+    } else if (prevMutationLoading.current && !mutationLoading && mutationError) {
+      toast.error(mutationError);
+    }
+    prevMutationLoading.current = mutationLoading;
+  }, [mutationLoading, mutationError]);
 
   // Debounced search
   useEffect(() => {
@@ -89,7 +99,15 @@ export default function CustomersPage() {
     setLimit(newLimit);
     setSortBy(newSortBy);
     setOrder(newOrder);
-    dispatch(listRequest({ page: newPage, limit: newLimit, search: search || undefined, sortBy: newSortBy, order: newOrder }));
+    dispatch(
+      listRequest({
+        page: newPage,
+        limit: newLimit,
+        search: search || undefined,
+        sortBy: newSortBy,
+        order: newOrder,
+      }),
+    );
   };
 
   const handleDelete = (id: string) => {
@@ -107,7 +125,9 @@ export default function CustomersPage() {
           <Avatar style={{ background: '#1677ff' }} icon={<UserOutlined />} />
           <div>
             <div style={{ fontWeight: 600 }}>{record.fullName}</div>
-            <Text type="secondary" style={{ fontSize: 12 }}>{record.email}</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {record.email}
+            </Text>
           </div>
         </Space>
       ),

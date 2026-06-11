@@ -38,57 +38,54 @@ import {
 import type { Customer } from '@/features/customers/customerTypes';
 import type { Gender, IdentityDocumentType } from '@/features/auth/authTypes';
 
-const { } = Typography;
+const {} = Typography;
 
-const identityDocSchema = z
-  .object({
-    type: z.enum(IDENTITY_DOCUMENT_TYPES, {
-      message: 'Please choose a document type',
+const identityDocSchema = z.object({
+  type: z.enum(IDENTITY_DOCUMENT_TYPES, {
+    message: 'Please choose a document type',
+  }),
+  number: z.string().min(1, 'Number is required').max(50),
+  issueDate: z.any().refine((v) => dayjs(v as Dayjs | string).isValid(), 'Issue date is required'),
+  issuePlace: z.string().min(1, 'Issue place is required').max(200),
+});
+
+const formSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required').max(200),
+  dateOfBirth: z
+    .any()
+    .refine((v) => dayjs(v as Dayjs | string).isValid(), 'Date of birth is required')
+    .refine(
+      (v) => dayjs(v as Dayjs | string).isBefore(dayjs()),
+      'Date of birth must be in the past',
+    ),
+  address: z.string().min(1, 'Address is required').max(500),
+  phone: z
+    .string()
+    .min(6, 'Phone is too short')
+    .max(30)
+    .regex(/^[+0-9 ()-]+$/, { message: 'Phone contains invalid characters' }),
+  email: z.string().email('Invalid email'),
+  gender: z.enum(GENDERS, { message: 'Please choose a gender' }),
+  nationality: z.string().min(1, 'Nationality is required').max(100),
+  occupation: z.string().min(1, 'Occupation is required').max(200),
+  identityDocuments: z
+    .array(identityDocSchema)
+    .min(1, 'At least one identity document is required')
+    .max(10, 'Up to 10 identity documents allowed')
+    .superRefine((arr, ctx) => {
+      const seen = new Set<string>();
+      arr.forEach((d, i) => {
+        if (seen.has(d.type)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [i, 'type'],
+            message: `Duplicate type: ${d.type}`,
+          });
+        }
+        seen.add(d.type);
+      });
     }),
-    number: z.string().min(1, 'Number is required').max(50),
-    issueDate: z
-      .any()
-      .refine((v) => dayjs(v as Dayjs | string).isValid(), 'Issue date is required'),
-    issuePlace: z.string().min(1, 'Issue place is required').max(200),
-  });
-
-const formSchema = z
-  .object({
-    fullName: z.string().min(1, 'Full name is required').max(200),
-    dateOfBirth: z
-      .any()
-      .refine((v) => dayjs(v as Dayjs | string).isValid(), 'Date of birth is required')
-      .refine(
-        (v) => dayjs(v as Dayjs | string).isBefore(dayjs()),
-        'Date of birth must be in the past',
-      ),
-    address: z.string().min(1, 'Address is required').max(500),
-    phone: z
-      .string()
-      .min(6, 'Phone is too short')
-      .max(30)
-      .regex(/^[+0-9 ()-]+$/, { message: 'Phone contains invalid characters' }),
-    email: z.string().email('Invalid email'),
-    gender: z.enum(GENDERS, { message: 'Please choose a gender' }),
-    nationality: z.string().min(1, 'Nationality is required').max(100),
-    occupation: z.string().min(1, 'Occupation is required').max(200),
-    identityDocuments: z
-      .array(identityDocSchema)
-      .max(10, 'Up to 10 identity documents allowed')
-      .superRefine((arr, ctx) => {
-        const seen = new Set<string>();
-        arr.forEach((d, i) => {
-          if (seen.has(d.type)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: [i, 'type'],
-              message: `Duplicate type: ${d.type}`,
-            });
-          }
-          seen.add(d.type);
-        });
-      }),
-  });
+});
 
 export type CustomerFormValues = z.infer<typeof formSchema>;
 
@@ -155,13 +152,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
   return (
     <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
       {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
+        <Alert type="error" message={error} showIcon closable style={{ marginBottom: 16 }} />
       )}
 
       <Card
@@ -347,10 +338,16 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
         style={{ marginBottom: 16 }}
       >
         {fields.length === 0 ? (
-          <Empty
-            description="No identity documents yet"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Empty description="No identity documents yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            {(errors.identityDocuments as unknown as { message?: string } | undefined)?.message && (
+              <Alert
+                type="error"
+                showIcon
+                message={(errors.identityDocuments as unknown as { message?: string }).message}
+              />
+            )}
+          </Space>
         ) : (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {fields.map((f, i) => (
@@ -373,16 +370,20 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                           label="Type"
                           required
                           validateStatus={
-                            (errors.identityDocuments as Record<string, { type?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.type
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { type?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.type
                               ? 'error'
                               : ''
                           }
                           help={
-                            (errors.identityDocuments as Record<string, { type?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.type?.message as string
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { type?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.type?.message as string
                           }
                           style={{ marginBottom: 0 }}
                         >
@@ -406,16 +407,20 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                           label="Number"
                           required
                           validateStatus={
-                            (errors.identityDocuments as Record<string, { number?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.number
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { number?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.number
                               ? 'error'
                               : ''
                           }
                           help={
-                            (errors.identityDocuments as Record<string, { number?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.number?.message as string
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { number?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.number?.message as string
                           }
                           style={{ marginBottom: 0 }}
                         >
@@ -433,16 +438,20 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                           label="Issue date"
                           required
                           validateStatus={
-                            (errors.identityDocuments as Record<string, { issueDate?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.issueDate
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { issueDate?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.issueDate
                               ? 'error'
                               : ''
                           }
                           help={
-                            (errors.identityDocuments as Record<string, { issueDate?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.issueDate?.message as string
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { issueDate?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.issueDate?.message as string
                           }
                           style={{ marginBottom: 0 }}
                         >
@@ -466,16 +475,20 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                           label="Issue place"
                           required
                           validateStatus={
-                            (errors.identityDocuments as Record<string, { issuePlace?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.issuePlace
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { issuePlace?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.issuePlace
                               ? 'error'
                               : ''
                           }
                           help={
-                            (errors.identityDocuments as Record<string, { issuePlace?: { message?: string } }> | undefined)?.[
-                              i
-                            ]?.issuePlace?.message as string
+                            (
+                              errors.identityDocuments as
+                                | Record<string, { issuePlace?: { message?: string } }>
+                                | undefined
+                            )?.[i]?.issuePlace?.message as string
                           }
                           style={{ marginBottom: 0 }}
                         >
@@ -485,12 +498,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                     />
                   </Col>
                   <Col xs={24} sm={4} style={{ textAlign: 'right' }}>
-                    <Button
-                      danger
-                      type="text"
-                      icon={<DeleteOutlined />}
-                      onClick={() => remove(i)}
-                    >
+                    <Button danger type="text" icon={<DeleteOutlined />} onClick={() => remove(i)}>
                       Remove
                     </Button>
                   </Col>
@@ -514,11 +522,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
         >
           {mode === 'create' ? 'Create customer' : 'Save changes'}
         </Button>
-        <Button
-          icon={<CloseOutlined />}
-          onClick={() => router.back()}
-          size="large"
-        >
+        <Button icon={<CloseOutlined />} onClick={() => router.back()} size="large">
           Cancel
         </Button>
       </Space>

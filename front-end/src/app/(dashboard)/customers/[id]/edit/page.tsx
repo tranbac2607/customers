@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Typography, Space, Button, Skeleton, Result } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { getRequest, clearCurrent, updateRequest } from '@/features/customers/customersSlice';
 import { CustomerForm, CustomerFormValues } from '@/features/customers/CustomerForm';
-import { toast } from 'react-toastify';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Paragraph } = Typography;
@@ -18,8 +18,9 @@ export default function EditCustomerPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { item, loading: getLoading, error: getError } = useAppSelector((s) => s.customers.current);
-  const { loading: updateLoading, error: updateError } = useAppSelector((s) => s.customers.mutation);
-  const lastUpdatedId = useAppSelector((s) => s.customers.list.items.find((c) => c.id === id)?.id);
+  const { loading: updateLoading, error: updateError } = useAppSelector(
+    (s) => s.customers.mutation,
+  );
 
   useEffect(() => {
     if (id) dispatch(getRequest(id));
@@ -28,20 +29,17 @@ export default function EditCustomerPage() {
     };
   }, [id, dispatch]);
 
-  // Watch for successful update (compare updatedAt)
-  const updatedAt = item?.updatedAt;
+  // Detect transition: updateLoading true -> false = dispatch finished
+  const prevUpdateLoading = useRef(false);
   useEffect(() => {
-    if (updateLoading) {
-      // wait
-    } else if (!updateError && lastUpdatedId && updatedAt) {
-      const updated = lastUpdatedId && item && item.id === lastUpdatedId;
-      if (updated && !updateLoading) {
-        toast.success('Customer updated');
-        router.push(`/customers/${id}`);
-      }
+    if (prevUpdateLoading.current && !updateLoading && !updateError) {
+      toast.success('Customer updated');
+      router.push('/customers');
+    } else if (prevUpdateLoading.current && !updateLoading && updateError) {
+      toast.error(updateError);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateLoading]);
+    prevUpdateLoading.current = updateLoading;
+  }, [updateLoading, updateError, router]);
 
   if (getLoading && !item) {
     return <Skeleton active paragraph={{ rows: 8 }} />;
@@ -116,7 +114,7 @@ export default function EditCustomerPage() {
           initial={item}
           onSubmit={handleSubmit}
           loading={updateLoading}
-          error={updateError}
+          error={null}
         />
       </Card>
     </div>

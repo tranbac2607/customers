@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Card, Form, Input, Button, Typography, Space, Divider, Alert } from 'antd';
+import { Card, Form, Input, Button, Typography, Space, Divider } from 'antd';
 import { LockOutlined, MailOutlined, LoginOutlined } from '@ant-design/icons';
+import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginRequest } from '@/features/auth/authSlice';
 
@@ -19,16 +20,30 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const { loading, error, isAuthenticated } = useAppSelector((s) => s.auth);
+  const { loading, error, isAuthenticated, user } = useAppSelector((s) => s.auth);
+
+  // Track previous auth state to fire success toast exactly once
+  const wasAuthenticated = useRef(isAuthenticated);
+  const lastError = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !wasAuthenticated.current) {
+      toast.success(`Welcome back${user?.name ? `, ${user.name}` : ''}!`);
       const next = searchParams.get('next') || '/customers';
       router.replace(next);
     }
-  }, [isAuthenticated, router, searchParams]);
+    wasAuthenticated.current = isAuthenticated;
+  }, [isAuthenticated, user, router, searchParams]);
+
+  useEffect(() => {
+    if (error && error !== lastError.current) {
+      toast.error('Invalid email or password');
+      lastError.current = error;
+    }
+  }, [error]);
 
   const onFinish = (values: LoginValues) => {
+    lastError.current = null;
     dispatch(loginRequest(values));
   };
 
@@ -73,8 +88,6 @@ export default function LoginPage() {
               Sign in to manage your customers
             </Paragraph>
           </div>
-
-          {error && <Alert type="error" message={error} showIcon closable />}
 
           <Form
             layout="vertical"

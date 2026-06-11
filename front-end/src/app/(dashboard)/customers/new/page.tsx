@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Card, Typography, Space, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { createRequest } from '@/features/customers/customersSlice';
 import { CustomerForm, CustomerFormValues } from '@/features/customers/CustomerForm';
@@ -13,7 +15,20 @@ const { Title, Paragraph } = Typography;
 
 export default function NewCustomerPage() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { loading, error } = useAppSelector((s) => s.customers.mutation);
+
+  // Detect transition: loading true -> false = dispatch finished
+  const prevLoading = useRef(false);
+  useEffect(() => {
+    if (prevLoading.current && !loading && !error) {
+      toast.success('Customer created');
+      router.push('/customers');
+    } else if (prevLoading.current && !loading && error) {
+      toast.error(error);
+    }
+    prevLoading.current = loading;
+  }, [loading, error, router]);
 
   const handleSubmit = (values: CustomerFormValues) => {
     const payload = {
@@ -35,14 +50,6 @@ export default function NewCustomerPage() {
     dispatch(createRequest(payload));
   };
 
-  // After successful create, navigate to detail
-  const lastCreated = useAppSelector((s) => s.customers.list.items[0]);
-  useEffect(() => {
-    if (!loading && !error && lastCreated) {
-      // detect transition: if lastCreated was just created, push
-    }
-  }, [loading, error, lastCreated]);
-
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
@@ -56,16 +63,11 @@ export default function NewCustomerPage() {
         New customer
       </Title>
       <Paragraph type="secondary">
-        Fill in the customer's personal information and add at least one identity document (optional).
+        Fill in the customer&apos;s personal information and add at least one identity document.
       </Paragraph>
 
       <Card>
-        <CustomerForm
-          mode="create"
-          onSubmit={handleSubmit}
-          loading={loading}
-          error={error}
-        />
+        <CustomerForm mode="create" onSubmit={handleSubmit} loading={loading} error={null} />
       </Card>
     </div>
   );
