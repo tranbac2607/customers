@@ -1,6 +1,8 @@
 import { Customer, ICustomer, IIdentityDocument } from './customer.model';
-import { Types, FilterQuery } from 'mongoose';
+import { Types } from 'mongoose';
 import { ListCustomersQuery } from './customer.schema';
+
+type FilterQuery<_T> = Record<string, unknown>;
 
 export interface FindManyResult {
   items: ICustomer[];
@@ -39,7 +41,7 @@ export const customerRepository = {
     return Customer.findOneAndUpdate(
       { _id: id, isDeleted: false },
       { $set: data },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     );
   },
 
@@ -48,7 +50,7 @@ export const customerRepository = {
     return Customer.findOneAndUpdate(
       { _id: id, isDeleted: false },
       { $set: { isDeleted: true } },
-      { new: true },
+      { returnDocument: 'after' },
     );
   },
 

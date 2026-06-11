@@ -43,7 +43,7 @@ const { } = Typography;
 const identityDocSchema = z
   .object({
     type: z.enum(IDENTITY_DOCUMENT_TYPES, {
-      errorMap: () => ({ message: 'Please choose a document type' }),
+      message: 'Please choose a document type',
     }),
     number: z.string().min(1, 'Number is required').max(50),
     issueDate: z
@@ -69,7 +69,7 @@ const formSchema = z
       .max(30)
       .regex(/^[+0-9 ()-]+$/, { message: 'Phone contains invalid characters' }),
     email: z.string().email('Invalid email'),
-    gender: z.enum(GENDERS, { errorMap: () => ({ message: 'Please choose a gender' }) }),
+    gender: z.enum(GENDERS, { message: 'Please choose a gender' }),
     nationality: z.string().min(1, 'Nationality is required').max(100),
     occupation: z.string().min(1, 'Occupation is required').max(200),
     identityDocuments: z
@@ -87,8 +87,7 @@ const formSchema = z
           }
           seen.add(d.type);
         });
-      })
-      .default([]),
+      }),
   });
 
 export type CustomerFormValues = z.infer<typeof formSchema>;

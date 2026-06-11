@@ -12,7 +12,7 @@ export const createCustomerSchema = z
   .object({
     fullName: z.string().min(1, 'Full name is required').max(200).trim(),
     dateOfBirth: z.coerce
-      .date({ invalid_type_error: 'Date of birth must be a valid date' })
+      .date({ message: 'Date of birth must be a valid date' })
       .refine((d) => d < new Date(), { message: 'Date of birth must be in the past' }),
     address: z.string().min(1).max(500).trim(),
     phone: z

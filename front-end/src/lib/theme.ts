@@ -3,7 +3,6 @@ import { theme } from 'antd';
 
 export const antdTheme: ThemeConfig = {
   algorithm: theme.defaultAlgorithm,
-  cssVar: true,
   token: {
     colorPrimary: '#1677ff',
     colorInfo: '#1677ff',

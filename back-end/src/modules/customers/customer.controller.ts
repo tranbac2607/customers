@@ -3,6 +3,11 @@ import { customerService } from './customer.service';
 import { ok } from '@/utils/ApiResponse';
 import { CreateCustomerInput, ListCustomersQuery, UpdateCustomerInput } from './customer.schema';
 
+const paramString = (v: string | string[] | undefined): string => {
+  if (Array.isArray(v)) return v[0] ?? '';
+  return v ?? '';
+};
+
 export const customerController = {
   async list(req: Request, res: Response) {
     const query = req.query as unknown as ListCustomersQuery;
@@ -11,7 +16,7 @@ export const customerController = {
   },
 
   async get(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = paramString(req.params.id);
     const customer = await customerService.get(id);
     res.json(ok(customer));
   },
@@ -23,14 +28,14 @@ export const customerController = {
   },
 
   async update(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = paramString(req.params.id);
     const input = req.body as UpdateCustomerInput;
     const updated = await customerService.update(id, input);
     res.json(ok(updated));
   },
 
   async remove(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = paramString(req.params.id);
     await customerService.remove(id);
     res.status(204).send();
   },

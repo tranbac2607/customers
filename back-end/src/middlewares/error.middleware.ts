@@ -7,7 +7,6 @@ import { ApiFailure } from '@/utils/ApiResponse';
 import { logger } from '@/config/logger';
 import { env } from '@/config/env';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorMiddleware: ErrorRequestHandler = (
   err: unknown,
   req: Request,

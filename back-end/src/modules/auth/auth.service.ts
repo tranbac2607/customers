@@ -48,7 +48,7 @@ export const authService = {
     let payload;
     try {
       payload = verifyRefreshToken(input.refreshToken);
-    } catch (err) {
+    } catch {
       throw ApiError.unauthorized('Invalid refresh token');
     }
 

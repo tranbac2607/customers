@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { connectDB, disconnectDB } from '@/config/database';
 import { logger } from '@/config/logger';
 import { authRepository } from '@/modules/auth/auth.repository';
