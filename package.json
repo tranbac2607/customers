@@ -22,7 +22,7 @@
     "build:fe": "npm --workspace front-end run build",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
-    "prepare": "husky",
+    "prepare": "node -e \"try { require('husky').install() } catch { console.log('husky skipped (no dev deps in this env)'); process.exit(0) }\"",
     "commitlint": "commitlint --edit",
     "dev:be": "npm --workspace back-end run dev:memory",
     "dev:fe": "npm --workspace front-end run dev",
