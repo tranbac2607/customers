@@ -1,32 +1,26 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const ACCESS_TOKEN_COOKIE = 'access_token';
-const PROTECTED_PREFIXES = ['/customers', '/dashboard'];
-
-const isProtectedPath = (pathname: string): boolean =>
-  PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (!isProtectedPath(pathname)) {
-    return NextResponse.next();
-  }
-
-  const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
-  if (accessToken) {
-    return NextResponse.next();
-  }
-
-  // Not authenticated: redirect to /login, preserving the original path as `next`.
-  const loginUrl = new URL('/login', request.url);
-  loginUrl.searchParams.set('next', pathname);
-  return NextResponse.redirect(loginUrl);
+/**
+ * Server-side proxy for authentication checks.
+ *
+ * NOTE: When the FE (Vercel) and BE (Render) are on different domains,
+ * the httpOnly auth cookies set by the BE are NOT visible to this proxy
+ * because the browser only sends cookies back to the same domain that
+ * set them. So we cannot make a secure auth decision here.
+ *
+ * Auth is therefore verified client-side: the dashboard layout calls
+ * /auth/me on mount. If it returns 401, the user is redirected to
+ * /login. The BE is the source of truth for protected data.
+ *
+ * This proxy is kept as a pass-through so we can add lightweight
+ * cross-cutting concerns later (logging, request IDs, geo, etc.)
+ * without changing the auth architecture.
+ */
+export function proxy(_request: NextRequest) {
+  return NextResponse.next();
 }
 
 export const config = {
-  // Run on every page request, except API routes, static files, and image
-  // optimization. (The backend has its own auth middleware for /api/*.)
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

@@ -29,12 +29,25 @@ function AuthBootstrap({ children }: { children: ReactNode }) {
     bootstrapped.current = true;
 
     let cancelled = false;
+    const redirectToLogin = () => {
+      if (cancelled) return;
+      // Only redirect if not already on the login page
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        dispatch(logout());
+        router.replace('/login');
+      }
+    };
     fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
       credentials: 'include',
     })
       .then(async (res) => {
         if (cancelled) return;
-        if (!res.ok) return; // 401 or other — leave user as null
+        if (res.status === 401) {
+          // No valid cookie — send the user to /login unless they're already there
+          redirectToLogin();
+          return;
+        }
+        if (!res.ok) return; // Other errors — leave user as null
         const data = await res.json();
         if (data?.success && data.data?.user) {
           dispatch(hydrateUser(data.data.user));
@@ -47,7 +60,7 @@ function AuthBootstrap({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [dispatch]);
+  }, [dispatch, router]);
 
   useEffect(() => {
     bindAxiosAuth({
