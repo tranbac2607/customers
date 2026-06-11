@@ -3,6 +3,7 @@
 This guide walks through deploying the app live with **MongoDB Atlas** (free M0) + **Vercel** (frontend, free) + your choice of backend host. All options below are **100% free** for a demo / assignment.
 
 > **TL;DR** (recommended for fastest setup):
+>
 > 1. **MongoDB Atlas M0** — free DB
 > 2. **Render.com** — free backend (spin down after 15 min idle; perfect for demo)
 > 3. **Vercel** — free frontend
@@ -16,7 +17,7 @@ This guide walks through deploying the app live with **MongoDB Atlas** (free M0)
 ┌─────────────────┐     HTTPS    ┌──────────────────────┐
 │  Browser (FE)   │ ◄──────────► │  Vercel (Next.js)    │
 │  Redux Store    │              │  - SSR + Static      │
-│  + Persist (LS) │              │  - Antd 5            │
+│  + Persist (LS) │              │  - Antd 6            │
 └────────┬────────┘              └──────────┬───────────┘
          │                                  │
          │ Bearer JWT (auto-refresh)         │
@@ -96,6 +97,7 @@ npm run seed
 ```
 
 This creates:
+
 - Admin: `admin@example.com` / `Admin@123`
 - 20 sample customers with identity documents
 
@@ -191,10 +193,10 @@ fly deploy
 
 ### 3.2 Environment variables
 
-| Variable                   | Value                                                          |
-|----------------------------|----------------------------------------------------------------|
-| `NEXT_PUBLIC_API_BASE_URL` | `https://customers-api-xxxx.onrender.com/api` (or Fly URL)     |
-| `NEXT_PUBLIC_APP_NAME`     | `Customer Management`                                          |
+| Variable                   | Value                                                      |
+| -------------------------- | ---------------------------------------------------------- |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://customers-api-xxxx.onrender.com/api` (or Fly URL) |
+| `NEXT_PUBLIC_APP_NAME`     | `Customer Management`                                      |
 
 Apply to **Production** (and Preview if you want previews to point at production API).
 
@@ -241,12 +243,12 @@ Vercel → **Settings → Domains → Add** → follow DNS instructions. Update 
 
 ## 6. Cost summary
 
-| Service       | Free option                              | Cost for production upgrade |
-|---------------|------------------------------------------|------------------------------|
-| Atlas M0      | 512 MB storage, 100 conns                | M10+ $57/mo                  |
-| Render BE     | 750 h/mo, sleeps after 15 min idle       | Starter $7/mo (always-on)    |
-| Fly.io BE     | $5 trial credit, then ~$2/mo for nano    | Custom                       |
-| Vercel FE     | 100 GB bandwidth/mo, unlimited projects  | Pro $20/mo                   |
+| Service   | Free option                             | Cost for production upgrade |
+| --------- | --------------------------------------- | --------------------------- |
+| Atlas M0  | 512 MB storage, 100 conns               | M10+ $57/mo                 |
+| Render BE | 750 h/mo, sleeps after 15 min idle      | Starter $7/mo (always-on)   |
+| Fly.io BE | $5 trial credit, then ~$2/mo for nano   | Custom                      |
+| Vercel FE | 100 GB bandwidth/mo, unlimited projects | Pro $20/mo                  |
 
 **Demo cost: $0/mo** (Render spins down when idle).
 **Always-on production: ~$2-9/mo** depending on host.
@@ -289,11 +291,11 @@ git grep -iE "jwt_access_secret|jwt_refresh_secret|mongodb_uri" -- '*.ts' '*.tsx
 
 ## 10. Alternatives at a glance
 
-| Need       | Best free option        | Notes                                      |
-|------------|-------------------------|--------------------------------------------|
-| DB         | Atlas M0                | 512 MB free forever                        |
-| BE         | **Render** (easiest)    | 750 h/mo + 15 min idle sleep               |
-| BE alt     | **Fly.io** (fastest)    | $5 trial then ~$2/mo for nano              |
-| FE         | **Vercel**              | Free, perfect Next.js support              |
-| FE alt     | Netlify                 | Also great for Next.js                     |
-| CI         | **GitHub Actions**      | Free for public repos, 2000 min/mo private |
+| Need   | Best free option     | Notes                                      |
+| ------ | -------------------- | ------------------------------------------ |
+| DB     | Atlas M0             | 512 MB free forever                        |
+| BE     | **Render** (easiest) | 750 h/mo + 15 min idle sleep               |
+| BE alt | **Fly.io** (fastest) | $5 trial then ~$2/mo for nano              |
+| FE     | **Vercel**           | Free, perfect Next.js support              |
+| FE alt | Netlify              | Also great for Next.js                     |
+| CI     | **GitHub Actions**   | Free for public repos, 2000 min/mo private |

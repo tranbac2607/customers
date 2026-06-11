@@ -28,8 +28,8 @@ export default function HomePage() {
                   Customer Management
                 </Title>
                 <Paragraph type="secondary" style={{ fontSize: 16 }}>
-                  A polished, production-grade full-stack app to manage customers
-                  and their identity documents.
+                  A polished, production-grade full-stack app to manage customers and their identity
+                  documents.
                 </Paragraph>
               </div>
               <Space>
@@ -44,8 +44,8 @@ export default function HomePage() {
                 </Link>
               </Space>
               <Paragraph type="secondary" style={{ marginTop: 24 }}>
-                Stack: Next.js 14 · React 18 · TypeScript · Redux Toolkit + Saga ·
-                Antd 5 · react-hook-form · zod
+                Stack: Next.js 16 · React 19 · TypeScript · Redux Toolkit + Saga · Antd 6 ·
+                react-hook-form · zod
               </Paragraph>
             </Space>
           </Col>

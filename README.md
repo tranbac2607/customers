@@ -25,12 +25,12 @@ cd front-end && npm run dev         # → http://localhost:3000
 
 This is **one GitHub repo** with everything — no separate repos needed.
 
-| Service     | Free host                        | Cost |
-|-------------|----------------------------------|------|
-| Database    | [MongoDB Atlas M0](https://www.mongodb.com/cloud/atlas) | $0 forever |
-| Backend     | [Render.com](https://render.com) (Blueprint deploy) | $0/mo (750 h, sleeps after 15 min idle) |
-| Backend alt | [Fly.io](https://fly.io)         | $5 trial then ~$2/mo for nano VM |
-| Frontend    | [Vercel](https://vercel.com)     | $0/mo (free hobby tier) |
+| Service     | Free host                                               | Cost                                    |
+| ----------- | ------------------------------------------------------- | --------------------------------------- |
+| Database    | [MongoDB Atlas M0](https://www.mongodb.com/cloud/atlas) | $0 forever                              |
+| Backend     | [Render.com](https://render.com) (Blueprint deploy)     | $0/mo (750 h, sleeps after 15 min idle) |
+| Backend alt | [Fly.io](https://fly.io)                                | $5 trial then ~$2/mo for nano VM        |
+| Frontend    | [Vercel](https://vercel.com)                            | $0/mo (free hobby tier)                 |
 
 Full step-by-step: see [`docs/DEPLOY.md`](./docs/DEPLOY.md). The repo includes:
 
@@ -62,7 +62,7 @@ customers/                ← ONE GitHub repo
 - **Form validation** with zod, shared shape between FE & BE
 - **Auto-refresh of access tokens** on 401 with request queueing
 - **Dark mode** toggle (state in Redux)
-- **Polished UX** — Antd 5, loading skeletons, error boundaries, toast notifications
+- **Polished UX** — Antd 6, loading skeletons, error boundaries, toast notifications
 - **Centralized error handling** with structured logging (winston + daily rotate)
 - **Rate limiting**, helmet, CORS, request ID
 - **Swagger UI** for API at `/api/docs`
@@ -71,17 +71,17 @@ customers/                ← ONE GitHub repo
 
 ## Scripts (run from root)
 
-| Script                | What it does                                       |
-|-----------------------|----------------------------------------------------|
-| `npm install`         | Install all workspaces                              |
-| `npm run dev:be`      | Start BE with in-memory Mongo                       |
-| `npm run dev:fe`      | Start FE dev server                                 |
-| `npm run lint`        | Lint BE + FE                                       |
-| `npm run typecheck`   | TypeScript check BE + FE                            |
-| `npm run test`        | Run all tests (BE + FE)                             |
-| `npm run build`       | Production build BE + FE                            |
-| `npm run format`      | Prettier write                                      |
-| `npm run seed`        | Seed admin + 20 customers (in-memory)              |
+| Script              | What it does                          |
+| ------------------- | ------------------------------------- |
+| `npm install`       | Install all workspaces                |
+| `npm run dev:be`    | Start BE with in-memory Mongo         |
+| `npm run dev:fe`    | Start FE dev server                   |
+| `npm run lint`      | Lint BE + FE                          |
+| `npm run typecheck` | TypeScript check BE + FE              |
+| `npm run test`      | Run all tests (BE + FE)               |
+| `npm run build`     | Production build BE + FE              |
+| `npm run format`    | Prettier write                        |
+| `npm run seed`      | Seed admin + 20 customers (in-memory) |
 
 ## Default credentials
 
@@ -92,8 +92,8 @@ customers/                ← ONE GitHub repo
 
 - **State**: Redux Toolkit + Redux Saga (explicit async flow as required by assignment)
 - **Forms**: react-hook-form + zod (single source of truth for FE & BE validation)
-- **UI**: Antd 5 with custom light + dark theme
+- **UI**: Antd 6 with custom light + dark theme
 - **Backend**: Express + Mongoose with feature-based module structure
 - **Auth**: Short-lived access (15m) + long-lived refresh (7d) with rotation; refresh tokens stored **hashed** in DB
 
-See [`docs/architecture.md`](./docs/architecture.md) and [`docs/decisions/`](./docs/decisions/) for detailed design notes.
+See [`docs/architecture.md`](./docs/architecture.md) for detailed design notes.

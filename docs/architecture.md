@@ -9,7 +9,7 @@ High-level overview of the system.
 │                 │              │                      │
 │  Browser (FE)   │ ───────────► │  Vercel (Next.js)    │
 │  - Redux Store  │              │  - SSR + Static      │
-│  - Persist (LS) │ ◄─────────── │  - Antd 5            │
+│  - Persist (LS) │ ◄─────────── │  - Antd 6            │
 │                 │   JSON+JWT   │                      │
 └────────┬────────┘              └──────────┬───────────┘
          │                                  │
