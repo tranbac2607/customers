@@ -1,5 +1,3 @@
-'use client';
-
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import * as sagaEffects from 'redux-saga/effects';
 import createSagaMiddlewareFactory from 'redux-saga';

@@ -1,5 +1,3 @@
-'use client';
-
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/axios';
@@ -14,7 +12,7 @@ import {
   refreshSuccess,
 } from './authSlice';
 
-function* handleLogin(
+export function* handleLogin(
   action: ReturnType<typeof loginRequest>,
 ): Generator {
   try {

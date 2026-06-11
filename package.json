@@ -14,23 +14,27 @@
     "typecheck": "npm-run-all -p typecheck:be typecheck:fe",
     "typecheck:be": "npm --workspace back-end run typecheck",
     "typecheck:fe": "npm --workspace front-end run typecheck",
-    "test": "npm --workspace back-end run test",
+    "test": "npm-run-all -p test:be test:fe",
+    "test:be": "npm --workspace back-end run test",
+    "test:fe": "npm --workspace front-end run test",
     "build": "npm-run-all -p build:be build:fe",
     "build:be": "npm --workspace back-end run build",
     "build:fe": "npm --workspace front-end run build",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
+    "prepare": "husky",
+    "commitlint": "commitlint --edit",
     "dev:be": "npm --workspace back-end run dev:memory",
     "dev:fe": "npm --workspace front-end run dev",
     "seed": "npm --workspace back-end run seed:memory"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.3.3",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "prettier": "^3.3.3"
   },
   "engines": {
     "node": ">=20"
@@ -38,5 +42,14 @@
   "overrides": {
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,json,md,css}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx}": [
+      "npm run lint:be -- --fix",
+      "npm run lint:fe -- --fix"
+    ]
   }
 }

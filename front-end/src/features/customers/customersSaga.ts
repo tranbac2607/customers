@@ -1,5 +1,3 @@
-'use client';
-
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/axios';

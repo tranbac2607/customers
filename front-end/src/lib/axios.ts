@@ -1,5 +1,3 @@
-'use client';
-
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'react-toastify';
 import { env } from './env';

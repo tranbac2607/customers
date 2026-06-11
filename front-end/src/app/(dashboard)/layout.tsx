@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, Tooltip } from 'antd';
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -10,11 +10,14 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   HomeOutlined,
+  BulbOutlined,
+  BulbFilled,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/features/auth/authSlice';
+import { toggleThemeMode } from '@/features/ui/uiSlice';
 import { AuthGuard } from '@/components/AuthGuard';
 
 const { Header, Sider, Content } = Layout;
@@ -32,6 +35,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
+  const themeMode = useAppSelector((s) => s.ui.themeMode);
 
   // Find the best matching menu key (handles nested paths)
   const selectedKey =
@@ -130,14 +134,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             onClick={() => setCollapsed(!collapsed)}
             style={{ fontSize: 18 }}
           />
-          <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
-            <Space style={{ cursor: 'pointer' }}>
-              <Avatar style={{ background: '#1677ff' }}>
-                {user?.name?.[0]?.toUpperCase() ?? 'A'}
-              </Avatar>
-              <Text strong>{user?.name ?? 'User'}</Text>
-            </Space>
-          </Dropdown>
+          <Space>
+            <Tooltip title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+              <Button
+                type="text"
+                icon={themeMode === 'dark' ? <BulbFilled /> : <BulbOutlined />}
+                onClick={() => dispatch(toggleThemeMode())}
+                style={{ fontSize: 18 }}
+              />
+            </Tooltip>
+            <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
+              <Space style={{ cursor: 'pointer' }}>
+                <Avatar style={{ background: '#1677ff' }}>
+                  {user?.name?.[0]?.toUpperCase() ?? 'A'}
+                </Avatar>
+                <Text strong>{user?.name ?? 'User'}</Text>
+              </Space>
+            </Dropdown>
+          </Space>
         </Header>
         <Content style={{ padding: 24, background: '#f5f7fa' }}>{children}</Content>
       </Layout>
