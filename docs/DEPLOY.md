@@ -1,44 +1,87 @@
 # Deployment Guide
 
-This guide walks through deploying the app live with **MongoDB Atlas** (free M0), **Railway** (backend), and **Vercel** (frontend) — all free tiers.
+This guide walks through deploying the app live with **MongoDB Atlas** (free M0) + **Vercel** (frontend, free) + your choice of backend host. All options below are **100% free** for a demo / assignment.
 
-## Stack overview
-
-| Service       | Provider       | Plan       | Cost    | Region            |
-|---------------|----------------|------------|---------|-------------------|
-| Database      | MongoDB Atlas  | M0 Free    | $0      | AWS (any)         |
-| Backend API   | Railway.app    | Free $5/mo | $0–$5   | us-east-1 (auto)  |
-| Frontend      | Vercel         | Hobby      | $0      | auto (CDN)        |
+> **TL;DR** (recommended for fastest setup):
+> 1. **MongoDB Atlas M0** — free DB
+> 2. **Render.com** — free backend (spin down after 15 min idle; perfect for demo)
+> 3. **Vercel** — free frontend
+> 4. Total cost: **$0/month**
 
 ---
 
-## 1. MongoDB Atlas (free M0 cluster)
+## Architecture
+
+```
+┌─────────────────┐     HTTPS    ┌──────────────────────┐
+│  Browser (FE)   │ ◄──────────► │  Vercel (Next.js)    │
+│  Redux Store    │              │  - SSR + Static      │
+│  + Persist (LS) │              │  - Antd 5            │
+└────────┬────────┘              └──────────┬───────────┘
+         │                                  │
+         │ Bearer JWT (auto-refresh)         │
+         │                                  ▼
+         │                       ┌──────────────────────┐
+         └─────────────────────► │  Backend (Render /   │
+              /api/*             │  Fly.io / Railway)   │
+                                 │  - Express REST      │
+                                 │  - JWT auth          │
+                                 │  - Swagger /api/docs │
+                                 └──────────┬───────────┘
+                                            │ Mongoose
+                                            ▼
+                                 ┌──────────────────────┐
+                                 │  MongoDB Atlas M0    │
+                                 │  customers DB        │
+                                 └──────────────────────┘
+```
+
+## Why one GitHub repo works for everything
+
+The project is a **monorepo** with two workspaces:
+
+```
+customers/                 ← ONE GitHub repo
+├── back-end/              ← Express + TypeScript API
+├── front-end/             ← Next.js + Antd web app
+├── render.yaml            ← Render.com deploy (optional)
+├── fly.toml               ← Fly.io deploy (optional)
+├── docs/
+├── .github/workflows/     ← CI (GitHub Actions)
+└── package.json           ← root with npm workspaces
+```
+
+- **Vercel** auto-detects Next.js → just point it at the `front-end/` root
+- **Render / Fly.io** uses `render.yaml` / `fly.toml` to deploy `back-end/`
+- One `git push` triggers all deploys
+
+---
+
+## 1. MongoDB Atlas (free M0)
 
 ### 1.1 Create account + cluster
 
 1. Sign up at <https://www.mongodb.com/cloud/atlas> (or sign in with Google).
 2. **Create a project** named `customer-management`.
-3. Click **Build a Database** → **Shared (M0 FREE)**.
-4. Pick a region closest to your users (e.g. `ap-southeast-1` Singapore for Vietnam).
+3. Click **Build a Database → Shared (M0 FREE)**.
+4. Region: pick closest to your users (e.g. `ap-southeast-1` Singapore for Vietnam).
 5. Cluster name: `customers-cluster`.
-6. Click **Create Cluster** (takes ~3 minutes to provision).
+6. Wait ~3 minutes for provisioning.
 
 ### 1.2 Configure access
 
-#### Database user
-- **Security → Database Access → Add New Database User**
+- **Database Access → Add New Database User**
   - Username: `customers_app`
-  - Password: generate with `openssl rand -hex 24` and **store it safely** (1Password / Bitwarden)
+  - Password: `openssl rand -hex 24` (save in 1Password)
   - Built-in Role: `Read and write to any database`
 
-#### Network access
-- **Security → Network Access → Add IP Address → Allow Access from Anywhere** (`0.0.0.0/0`)
-  - Required because Railway uses dynamic egress IPs.
+- **Network Access → Add IP Address → Allow Access from Anywhere** (`0.0.0.0/0`)
+  - Required because free-tier hosts use dynamic egress IPs.
 
-#### Connection string
 - **Deployment → Database → Connect → Drivers**
-- Copy the `mongodb+srv://…` URI, replace `<password>` with the actual password (URL-encode if it contains special chars).
-- Final form: `mongodb+srv://customers_app:PASSWORD@customers-cluster.xxxxx.mongodb.net/customers?retryWrites=true&w=majority`
+  - Copy `mongodb+srv://…` URI
+  - Replace `<password>` (URL-encode if it has special chars)
+  - Save: `mongodb+srv://customers_app:PASSWORD@customers-cluster.xxxxx.mongodb.net/customers?retryWrites=true&w=majority`
 
 ### 1.3 Seed the database
 
@@ -46,108 +89,127 @@ From your local machine:
 
 ```bash
 cd back-end
-MONGODB_URI="mongodb+srv://customers_app:PASSWORD@customers-cluster.xxxxx.mongodb.net/customers?retryWrites=true&w=majority" \
+MONGODB_URI="mongodb+srv://..." \
 JWT_ACCESS_SECRET="$(openssl rand -hex 32)" \
 JWT_REFRESH_SECRET="$(openssl rand -hex 32)" \
 npm run seed
 ```
 
 This creates:
-- Admin user: `admin@example.com` / `Admin@123`
+- Admin: `admin@example.com` / `Admin@123`
 - 20 sample customers with identity documents
 
-Verify in Atlas UI → **Browse Collections** → `customers.customers` should have documents.
-
 ---
 
-## 2. Railway (Backend)
+## 2. Backend — choose your free host
 
-### 2.1 Setup
+### Option A: Render.com (RECOMMENDED for free)
 
-1. Sign up at <https://railway.app> with your GitHub account.
-2. **New Project → Deploy from GitHub repo** → select the `customers` repo.
-3. Railway will start the build.
+**Free tier**: 750 instance-hours/month, spins down after 15 min idle.
 
-### 2.2 Configure service
+> The 15-min sleep is fine for a demo: the first request after idle takes ~30s to wake up, then it's instant. If you need 24/7 uptime, use Fly.io (Option B).
 
-- **Settings → Service → Root Directory**: `back-end`
-- **Settings → Build Command**: `npm install && npm run build`
-- **Settings → Start Command**: `npm start`
-- **Settings → Watch Paths**: `back-end/**` (so FE pushes don't trigger BE rebuilds)
-- **Settings → Health Check Path**: `/api/health`
+#### One-click deploy
 
-### 2.3 Environment variables (Variables tab)
+1. Push this repo to GitHub (if you haven't already).
+2. Sign up at <https://render.com> with GitHub.
+3. **New → Blueprint**.
+4. Point Render to your repo. It auto-detects `render.yaml` and creates the service.
+5. In the service dashboard, update the sync-env vars:
+   - `MONGODB_URI` = the Atlas URI from step 1
+   - `CORS_ORIGIN` = (your Vercel URL — set this AFTER deploying FE)
+6. Wait ~3-5 min for the first build. Get the public URL: `https://customers-api-xxxx.onrender.com`
 
-| Variable                | Value                                                                                  |
-|-------------------------|----------------------------------------------------------------------------------------|
-| `NODE_ENV`              | `production`                                                                           |
-| `PORT`                  | `4000`                                                                                 |
-| `CORS_ORIGIN`           | `https://customers-frontend.vercel.app` (set after Vercel deploy)                      |
-| `MONGODB_URI`           | The Atlas URI from step 1.2                                                            |
-| `JWT_ACCESS_SECRET`     | `openssl rand -hex 32`                                                                 |
-| `JWT_REFRESH_SECRET`    | `openssl rand -hex 32`                                                                 |
-| `JWT_ACCESS_EXPIRES`    | `15m`                                                                                  |
-| `JWT_REFRESH_EXPIRES`   | `7d`                                                                                   |
-| `RATE_LIMIT_WINDOW_MS`  | `900000`                                                                               |
-| `RATE_LIMIT_MAX`        | `100`                                                                                  |
-| `LOG_LEVEL`             | `info`                                                                                 |
+#### Manual setup (if not using Blueprint)
 
-### 2.4 Get public URL
+1. New → Web Service → connect repo.
+2. **Root Directory**: `back-end`
+3. **Build Command**: `npm install && npm run build`
+4. **Start Command**: `npm start`
+5. **Health Check Path**: `/api/health`
+6. **Instance Type**: Free
+7. Add env vars (see `render.yaml` for the list).
+8. Deploy.
 
-- **Settings → Networking → Generate Domain**
-- Railway will assign something like `https://customers-api.up.railway.app`.
-- Test: `curl https://customers-api.up.railway.app/api/health` → should return `{ success: true, data: { status: "ok", … } }`
+#### Notes
 
-### 2.5 Smoke test
+- The free tier shares CPU with other apps — expect slower cold starts.
+- Free Postgres on Render expires after 30 days (not relevant here since we use Atlas).
+
+### Option B: Fly.io (best for production-like)
+
+**Cost**: $0 trial credit, then ~$2/month for the smallest VM. Or stay within trial.
+
+#### One-command deploy
 
 ```bash
-curl https://customers-api.up.railway.app/api/health
-# Login
-curl -X POST https://customers-api.up.railway.app/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"admin@example.com","password":"Admin@123"}'
+# 1. Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# 2. Sign up
+fly auth signup
+
+# 3. Launch (uses fly.toml in repo root)
+fly launch --copy-config --name customers-api-<your-suffix>
+
+# 4. Set secrets
+fly secrets set \
+  MONGODB_URI="mongodb+srv://..." \
+  JWT_ACCESS_SECRET="$(openssl rand -hex 32)" \
+  JWT_REFRESH_SECRET="$(openssl rand -hex 32)" \
+  CORS_ORIGIN="https://your-frontend.vercel.app"
+
+# 5. Deploy
+fly deploy
 ```
 
-Swagger UI: `https://customers-api.up.railway.app/api/docs`
+#### Why Fly.io
+
+- No sleep/idle (or only when you set `auto_stop_machines: stop`).
+- Global edge — fast from anywhere.
+- Auto HTTPS, custom domain free.
+- Dockerized, so the build is identical to local.
+
+### Option C: Railway.app (no longer free, but paid plans start at $5/mo)
+
+> Only use this if you have a Railway subscription. We removed it from the recommended path because the free tier was discontinued in 2024.
 
 ---
 
-## 3. Vercel (Frontend)
+## 3. Vercel (frontend)
 
 ### 3.1 Setup
 
 1. Sign up at <https://vercel.com> with GitHub.
 2. **Add New Project → Import** the `customers` repo.
 3. **Configure**:
-   - **Root Directory**: `front-end` (click Edit, then select)
+   - **Root Directory**: `front-end` ← click Edit, then select
    - **Framework Preset**: Next.js (auto-detected)
-   - **Build Command**: `npm run build` (default)
-   - **Output Directory**: `.next` (default)
-   - **Install Command**: `npm install` (default)
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `.next`
+   - **Install Command**: `npm install`
 
 ### 3.2 Environment variables
 
 | Variable                   | Value                                                          |
 |----------------------------|----------------------------------------------------------------|
-| `NEXT_PUBLIC_API_BASE_URL` | `https://customers-api.up.railway.app/api`                     |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://customers-api-xxxx.onrender.com/api` (or Fly URL)     |
 | `NEXT_PUBLIC_APP_NAME`     | `Customer Management`                                          |
 
-Apply to **Production** (and Preview if you want previews to also point at production API).
+Apply to **Production** (and Preview if you want previews to point at production API).
 
 ### 3.3 Deploy
 
-- Click **Deploy** → wait ~1–2 min for build.
-- Vercel assigns a URL like `https://customers-frontend.vercel.app`.
+- Click **Deploy** → wait ~1-2 min.
+- URL: `https://customers-frontend.vercel.app`
 
-### 3.4 Update CORS on Railway
+### 3.4 Update CORS on backend
 
-- Go back to **Railway** → set `CORS_ORIGIN=https://customers-frontend.vercel.app` (the exact Vercel URL).
-- Trigger a redeploy (or Railway will auto-redeploy on env change).
+Go back to Render / Fly → set `CORS_ORIGIN=https://customers-frontend.vercel.app` → redeploy.
 
-### 3.5 Custom domain (optional polish)
+### 3.5 Custom domain (optional)
 
-- Vercel → **Settings → Domains → Add** → follow DNS instructions.
-- Update Railway's `CORS_ORIGIN` to match.
+Vercel → **Settings → Domains → Add** → follow DNS instructions. Update CORS too.
 
 ---
 
@@ -158,11 +220,9 @@ Apply to **Production** (and Preview if you want previews to also point at produ
 3. List loads with 20 customers; pagination works; search works.
 4. Click **New customer** → fill form (try a CCCD + a Passport) → save → redirect to detail page.
 5. Open detail → all fields present.
-6. Click **Edit** → change `occupation` → save → list reflects change.
-7. Click **Delete** → confirm modal → row gone.
-8. Open DevTools → Network → confirm:
-   - All calls go to `https://customers-api.up.railway.app/api/...`
-   - `Authorization: Bearer …` header is present on protected calls
+6. Edit → change `occupation` → save → list reflects change.
+7. Delete → confirm modal → row gone.
+8. Open DevTools → Network → confirm all calls go to your BE URL.
 9. Refresh page in browser → still logged in (redux-persist + localStorage).
 10. Logout → return to login.
 
@@ -170,38 +230,44 @@ Apply to **Production** (and Preview if you want previews to also point at produ
 
 ## 5. CI / CD
 
-Both Vercel and Railway auto-deploy on push to `main`:
-
-- `main` → production (Vercel + Railway)
-- `feat/*` branches → Vercel preview URLs (free); Railway preview environments are paid
-
-For preview URLs, point `NEXT_PUBLIC_API_BASE_URL` to the production API (simplest) or a shared staging API.
+- **GitHub Actions** runs on every push to `main` and on PRs (see `.github/workflows/ci.yml`).
+  - Format check, lint, typecheck, build, tests.
+  - If green ✅, you can deploy with confidence.
+- **Vercel** auto-deploys on push to `main`.
+- **Render** auto-deploys on push to `main` (if you enable `autoDeploy: true`).
+- **Fly.io** requires `fly deploy` manually, OR set up GitHub Actions deploy.
 
 ---
 
-## 6. Post-deploy housekeeping
+## 6. Cost summary
 
-- [ ] Seed Atlas with at least 20 customers (done in step 1.3)
+| Service       | Free option                              | Cost for production upgrade |
+|---------------|------------------------------------------|------------------------------|
+| Atlas M0      | 512 MB storage, 100 conns                | M10+ $57/mo                  |
+| Render BE     | 750 h/mo, sleeps after 15 min idle       | Starter $7/mo (always-on)    |
+| Fly.io BE     | $5 trial credit, then ~$2/mo for nano    | Custom                       |
+| Vercel FE     | 100 GB bandwidth/mo, unlimited projects  | Pro $20/mo                   |
+
+**Demo cost: $0/mo** (Render spins down when idle).
+**Always-on production: ~$2-9/mo** depending on host.
+
+---
+
+## 7. Post-deploy housekeeping
+
+- [ ] Seed Atlas with sample customers (done in step 1.3)
 - [ ] Verify rate limiter doesn't lock you out (100 req/15min is generous)
-- [ ] Monitor Railway logs for the first 24h
-- [ ] Optional: UptimeRobot pings `/api/health` every 5 min
+- [ ] Monitor logs for the first 24h
+- [ ] Optional: UptimeRobot pings `/api/health` every 5 min (free)
 - [ ] Optional: add `helmet` CSP once all origins are known
-
----
-
-## 7. Rollback
-
-- **Railway**: Deployments tab → click previous successful deploy → **Rollback**
-- **Vercel**: Deployments tab → **Promote to Production** on a previous deployment
-- **Atlas**: M0 doesn't support snapshots. If data loss, re-run the seed script.
 
 ---
 
 ## 8. Security checklist
 
 - [ ] `JWT_*_SECRET` are 32+ random bytes (`openssl rand -hex 32`) — not committed
-- [ ] `MONGODB_URI` is in Railway env, not in repo
-- [ ] Atlas DB user has **scoped** role (`readWrite` on `customers` DB only) — recommended for production
+- [ ] `MONGODB_URI` is in the host's env, not in repo
+- [ ] Atlas DB user has scoped role for production
 - [ ] Atlas network access: prefer specific IPs over `0.0.0.0/0` for production
 - [ ] Repo search for secrets: `git grep -iE "jwt_|mongodb_uri|secret"` → should be empty
 
@@ -212,24 +278,22 @@ git grep -iE "jwt_access_secret|jwt_refresh_secret|mongodb_uri" -- '*.ts' '*.tsx
 
 ---
 
-## 9. Cost summary
+## 9. Rollback
 
-| Service       | Free tier limit                              | After limit     |
-|---------------|----------------------------------------------|-----------------|
-| Atlas M0      | 512 MB storage, 100 connections              | M10+ ($57/mo)   |
-| Railway       | $5 credit / month (small API uses <$1)       | Pay-as-you-go   |
-| Vercel        | 100 GB bandwidth, unlimited personal projects| Pro $20/mo      |
-
-For a demo / assignment, expect **$0/mo total**.
+- **Vercel**: Deployments tab → "Promote to Production" on a previous deployment
+- **Render**: Deployments tab → click previous successful deploy → "Rollback"
+- **Fly.io**: `fly releases list` → `fly releases rollback <version>`
+- **MongoDB Atlas**: M0 doesn't support snapshots. Re-run the seed script.
 
 ---
 
-## 10. Alternatives
+## 10. Alternatives at a glance
 
-If you don't want to use these providers:
-
-| Need         | Atlas+ Railway + Vercel | Alternative                                          |
-|--------------|-------------------------|------------------------------------------------------|
-| DB           | Atlas M0                | Local MongoDB (dev only), Supabase Postgres          |
-| BE           | Railway                 | Render.com (sleeps), Fly.io, DigitalOcean App Plat.  |
-| FE           | Vercel                  | Netlify, Cloudflare Pages                            |
+| Need       | Best free option        | Notes                                      |
+|------------|-------------------------|--------------------------------------------|
+| DB         | Atlas M0                | 512 MB free forever                        |
+| BE         | **Render** (easiest)    | 750 h/mo + 15 min idle sleep               |
+| BE alt     | **Fly.io** (fastest)    | $5 trial then ~$2/mo for nano              |
+| FE         | **Vercel**              | Free, perfect Next.js support              |
+| FE alt     | Netlify                 | Also great for Next.js                     |
+| CI         | **GitHub Actions**      | Free for public repos, 2000 min/mo private |

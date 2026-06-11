@@ -1,0 +1,58 @@
+# Fly.io configuration — one-command deploy for the backend.
+# Usage:
+#   1. Install flyctl: https://fly.io/docs/hands-on/install-flyctl/
+#   2. Sign up: fly auth signup
+#   3. From the repo root, run: fly launch --copy-config --name customers-api-<your-suffix>
+#   4. Set secrets:
+#        fly secrets set MONGODB_URI="mongodb+srv://..." \
+#                       JWT_ACCESS_SECRET="$(openssl rand -hex 32)" \
+#                       JWT_REFRESH_SECRET="$(openssl rand -hex 32)" \
+#                       CORS_ORIGIN="https://your-frontend.vercel.app"
+#   5. Deploy: fly deploy
+#
+# Free trial gives $5 credit. After that, the smallest VM (shared-cpu-1x 256MB) is ~$2/month.
+# We use the same Docker image as production for parity.
+
+app = "customers-api"
+primary_region = "sin"  # Singapore (closest to VN). Change if you prefer another region.
+
+[build]
+  dockerfile = "back-end/Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "4000"
+  LOG_LEVEL = "info"
+  RATE_LIMIT_WINDOW_MS = "900000"
+  RATE_LIMIT_MAX = "100"
+  JWT_ACCESS_EXPIRES = "15m"
+  JWT_REFRESH_EXPIRES = "7d"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 250
+    soft_limit = 200
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "3s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"
+
+[deploy]
+  release_command = "node -e \"console.log('Migrating...'); process.exit(0)\""
+  strategy = "rolling"

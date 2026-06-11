@@ -1,0 +1,49 @@
+# Render Blueprint — one-click deploy for the backend.
+# See https://render.com/docs/blueprint-spec
+#
+# Usage:
+#   1. Push this repo to GitHub.
+#   2. In Render dashboard, click "New" → "Blueprint".
+#   3. Point Render to this repo. Render auto-detects render.yaml.
+#   4. Update env vars in the Render dashboard (MONGODB_URI, JWT_*, CORS_ORIGIN).
+#   5. Deploy. First deploy takes ~3-5 minutes.
+#
+# Free tier: 750 instance hours / month, spins down after 15 min idle.
+
+services:
+  - type: web
+    name: customers-api
+    runtime: node
+    rootDir: back-end
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: CORS_ORIGIN
+        sync: false
+        description: "Frontend URL (e.g. https://customers.vercel.app)"
+      - key: MONGODB_URI
+        sync: false
+        description: "MongoDB Atlas connection string"
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES
+        value: 7d
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 100
+      - key: LOG_LEVEL
+        value: info
