@@ -60,17 +60,22 @@ const isProd = env.NODE_ENV === 'production';
  * or credentialed cross-origin request, so the FE doesn't need to manage them.
  */
 const setAuthCookies = (res: Response, accessToken: string, refreshToken: string): void => {
+  // `sameSite: 'none'` is required so the browser sends these cookies on
+  // cross-site requests (Vercel FE -> Render BE). Browsers require
+  // `secure: true` whenever sameSite is 'none'. In dev (HTTP localhost) we
+  // fall back to 'lax' since the browser rejects 'none' without HTTPS.
+  const sameSite: 'none' | 'lax' = isProd ? 'none' : 'lax';
   res.cookie(COOKIE_NAMES.accessToken, accessToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'lax',
+    sameSite,
     path: '/',
     maxAge: ACCESS_TTL_SECONDS * 1000,
   });
   res.cookie(COOKIE_NAMES.refreshToken, refreshToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'lax',
+    sameSite,
     path: '/',
     maxAge: REFRESH_TTL_SECONDS * 1000,
   });
