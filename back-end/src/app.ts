@@ -13,6 +13,8 @@ import { requestLoggerMiddleware } from '@/middlewares/requestLogger.middleware'
 import { errorMiddleware } from '@/middlewares/error.middleware';
 import { notFoundMiddleware } from '@/middlewares/notFound.middleware';
 import healthRouter from '@/modules/health/health.routes';
+import authRouter from '@/modules/auth/auth.routes';
+import customerRouter from '@/modules/customers/customer.routes';
 
 export const createApp = (): Application => {
   const app = express();
@@ -68,6 +70,10 @@ export const createApp = (): Application => {
     );
     app.get('/api/docs.json', (_req, res) => res.json(swaggerSpec));
   }
+
+  // Feature routes
+  app.use('/api/auth', authRouter);
+  app.use('/api/customers', customerRouter);
 
   // Root
   app.get('/', (_req, res) => {

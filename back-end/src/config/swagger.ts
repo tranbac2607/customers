@@ -1,6 +1,7 @@
 import swaggerJSDoc from 'swagger-jsdoc';
 import path from 'path';
 import { env } from './env';
+import { allSchemas } from './schemas';
 
 const isProduction = env.NODE_ENV === 'production';
 
@@ -26,22 +27,7 @@ export const swaggerSpec = swaggerJSDoc({
           description: 'Paste access token from /api/auth/login',
         },
       },
-      schemas: {
-        Error: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: false },
-            error: {
-              type: 'object',
-              properties: {
-                code: { type: 'string' },
-                message: { type: 'string' },
-                details: {},
-              },
-            },
-          },
-        },
-      },
+      schemas: allSchemas,
     },
     tags: [
       { name: 'Health' },

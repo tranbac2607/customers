@@ -14,6 +14,11 @@ export const startServer = async (): Promise<void> => {
       }
     });
 
+    server.on('error', (err) => {
+      logger.error('HTTP server error', err);
+      process.exit(1);
+    });
+
     const shutdown = async (signal: string): Promise<void> => {
       logger.info(`Received ${signal}. Shutting down gracefully…`);
       server.close(async () => {
@@ -31,13 +36,3 @@ export const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 };
-
-process.on('unhandledRejection', (reason) => {
-  logger.error('unhandledRejection', reason);
-});
-process.on('uncaughtException', (err) => {
-  logger.error('uncaughtException', err);
-  process.exit(1);
-});
-
-void startServer();

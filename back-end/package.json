@@ -13,7 +13,8 @@
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand --passWithNoTests",
-    "seed": "tsx src/db/seed.ts"
+    "seed": "tsx -r dotenv/config src/db/seed.ts",
+    "seed:memory": "tsx src/db/seed.memory.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
