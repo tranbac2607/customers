@@ -15,10 +15,11 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/features/auth/authSlice';
 import { toggleThemeMode } from '@/features/ui/uiSlice';
-import { AuthGuard } from '@/components/AuthGuard';
+import { api } from '@/lib/axios';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -26,7 +27,11 @@ const { Text } = Typography;
 const menuItems = [
   { key: '/', icon: <HomeOutlined />, label: <Link href="/">Home</Link> },
   { key: '/customers', icon: <TeamOutlined />, label: <Link href="/customers">Customers</Link> },
-  { key: '/dashboard', icon: <DashboardOutlined />, label: <Link href="/dashboard">Dashboard</Link> },
+  {
+    key: '/dashboard',
+    icon: <DashboardOutlined />,
+    label: <Link href="/dashboard">Dashboard</Link>,
+  },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -42,12 +47,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     menuItems
       .map((m) => m.key)
       .filter((k) => k !== '/' && pathname?.startsWith(k))
-      .sort((a, b) => b.length - a.length)[0] ||
-    (pathname === '/' ? '/' : null);
+      .sort((a, b) => b.length - a.length)[0] || (pathname === '/' ? '/' : null);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    router.replace('/login');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout', {});
+      toast.success('Signed out');
+    } catch {
+      // Best-effort: even if BE call fails, clear local state.
+    } finally {
+      dispatch(logout());
+      router.replace('/login');
+    }
   };
 
   const userMenu = {
@@ -69,7 +80,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthGuard>
     <Layout style={{ minHeight: '100vh' }}>
       <Sider
         collapsible
@@ -156,6 +166,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <Content style={{ padding: 24, background: '#f5f7fa' }}>{children}</Content>
       </Layout>
     </Layout>
-    </AuthGuard>
   );
 }

@@ -3,32 +3,21 @@ import { toast } from 'react-toastify';
 import { env } from './env';
 import type { ApiFailure } from '@/types/api';
 
+// All auth happens via httpOnly cookies set by the backend.
+// `withCredentials: true` makes the browser send the cookies on every request.
 export const api = axios.create({
   baseURL: env.NEXT_PUBLIC_API_BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-// Set via Providers on mount to avoid circular imports.
-let getAccessToken: () => string | null = () => null;
+// Set via Providers on mount to wire up auto-refresh side-effects.
 let onUnauthorized: () => void = () => {};
-let onTokenRefreshed: (newAccess: string, newRefresh: string) => void = () => {};
 
-export const bindAxiosAuth = (deps: {
-  getAccessToken: () => string | null;
-  onUnauthorized: () => void;
-  onTokenRefreshed: (newAccess: string, newRefresh: string) => void;
-}) => {
-  getAccessToken = deps.getAccessToken;
+export const bindAxiosAuth = (deps: { onUnauthorized: () => void }) => {
   onUnauthorized = deps.onUnauthorized;
-  onTokenRefreshed = deps.onTokenRefreshed;
 };
-
-api.interceptors.request.use((cfg: InternalAxiosRequestConfig) => {
-  const t = getAccessToken();
-  if (t) cfg.headers.set('Authorization', `Bearer ${t}`);
-  return cfg;
-});
 
 let isRefreshing = false;
 let pendingQueue: Array<(token: string | null) => void> = [];
@@ -46,41 +35,27 @@ api.interceptors.response.use(
     const url = original?.url ?? '';
 
     // Auto-refresh on 401 (except for /auth/* and refresh itself)
-    if (
-      status === 401 &&
-      !url.includes('/auth/') &&
-      original &&
-      !original._retry
-    ) {
+    if (status === 401 && !url.includes('/auth/') && original && !original._retry) {
       if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          pendingQueue.push((token) => {
-            if (!token) return reject(err);
-            original.headers.set('Authorization', `Bearer ${token}`);
+        return new Promise((resolve) => {
+          pendingQueue.push((_token) => {
+            // Cookies are sent automatically on retry
             resolve(api(original));
           });
+          // The queued request is rejected via the outer catch if refresh fails.
         });
       }
       original._retry = true;
       isRefreshing = true;
 
       try {
-        // Read refresh token from store (dynamic import to avoid circular)
-        const { store } = await import('@/store');
-        const state = store.getState();
-        const refreshToken = state.auth.refreshToken;
-        if (!refreshToken) throw new Error('No refresh token');
-
-        const res = await axios.post(
+        // The browser sends the httpOnly refresh_token cookie automatically.
+        await axios.post(
           `${env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`,
-          { refreshToken },
+          {},
+          { withCredentials: true },
         );
-        const body = res.data;
-        if (!body.success) throw new Error(body.error?.message ?? 'Refresh failed');
-
-        onTokenRefreshed(body.data.accessToken, body.data.refreshToken);
-        flushQueue(body.data.accessToken);
-        original.headers.set('Authorization', `Bearer ${body.data.accessToken}`);
+        flushQueue('ok');
         return api(original);
       } catch {
         flushQueue(null);

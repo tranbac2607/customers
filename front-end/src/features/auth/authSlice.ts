@@ -1,10 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { UserResponse, TokenPair } from './authTypes';
+import type { UserResponse } from './authTypes';
 
 export interface AuthState {
   user: UserResponse | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -12,8 +10,6 @@ export interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  accessToken: null,
-  refreshToken: null,
   loading: false,
   error: null,
   isAuthenticated: false,
@@ -23,18 +19,13 @@ const slice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    loginRequest(
-      state,
-      _action: PayloadAction<{ email: string; password: string }>,
-    ) {
+    loginRequest(state, _action: PayloadAction<{ email: string; password: string }>) {
       state.loading = true;
       state.error = null;
     },
-    loginSuccess(state, action: PayloadAction<TokenPair & { user: UserResponse }>) {
+    loginSuccess(state, action: PayloadAction<{ user: UserResponse }>) {
       state.loading = false;
       state.error = null;
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
       state.user = action.payload.user;
       state.isAuthenticated = true;
     },
@@ -45,44 +36,19 @@ const slice = createSlice({
     },
     logout(state) {
       state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
       state.isAuthenticated = false;
       state.error = null;
     },
-    hydrateTokens(state, action: PayloadAction<{ accessToken: string; refreshToken: string | null; user: UserResponse | null }>) {
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
-      state.user = action.payload.user;
-      state.isAuthenticated = !!action.payload.accessToken;
-    },
-    refreshRequest(state) {
-      state.loading = true;
-    },
-    refreshSuccess(state, action: PayloadAction<{ accessToken: string; refreshToken: string }>) {
-      state.loading = false;
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
-    },
-    refreshFailure(state) {
-      state.loading = false;
-      state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
-      state.isAuthenticated = false;
+    /**
+     * Restore user from /me (used on app mount to rehydrate from cookie).
+     */
+    hydrateUser(state, action: PayloadAction<UserResponse | null>) {
+      state.user = action.payload;
+      state.isAuthenticated = !!action.payload;
     },
   },
 });
 
-export const {
-  loginRequest,
-  loginSuccess,
-  loginFailure,
-  logout,
-  hydrateTokens,
-  refreshRequest,
-  refreshSuccess,
-  refreshFailure,
-} = slice.actions;
+export const { loginRequest, loginSuccess, loginFailure, logout, hydrateUser } = slice.actions;
 
 export default slice.reducer;

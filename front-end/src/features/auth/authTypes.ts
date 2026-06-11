@@ -7,16 +7,6 @@ export interface UserResponse {
   createdAt: string;
 }
 
-export interface TokenPair {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
-export interface LoginResponse extends TokenPair {
-  user: UserResponse;
-}
-
 export const IDENTITY_DOCUMENT_TYPES = ['CCCD', 'DRIVER_LICENSE', 'PASSPORT'] as const;
 export type IdentityDocumentType = (typeof IDENTITY_DOCUMENT_TYPES)[number];
 

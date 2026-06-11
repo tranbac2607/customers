@@ -6,7 +6,6 @@ const config: Config = {
   testMatch: ['<rootDir>/src/**/*.test.{ts,tsx}'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    'redux-persist/lib/storage': '<rootDir>/__mocks__/storage.ts',
   },
   transform: {
     '^.+\\.(ts|tsx)$': [

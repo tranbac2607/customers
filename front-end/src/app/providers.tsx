@@ -2,45 +2,73 @@
 
 import { ReactNode, useEffect, useRef } from 'react';
 import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
-import { ConfigProvider, App as AntdApp, Spin, theme as antdTheme } from 'antd';
+import { ConfigProvider, App as AntdApp, Spin } from 'antd';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { makeStore, persistor } from '@/store';
+import { makeStore } from '@/store';
 import { getTheme, type ThemeMode } from '@/lib/theme';
 import { bindAxiosAuth } from '@/lib/axios';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout, refreshSuccess } from '@/features/auth/authSlice';
-import { useAppSelector as useUI } from '@/store/hooks';
+import { hydrateUser, logout } from '@/features/auth/authSlice';
+import { api } from '@/lib/axios';
 
-function AuthBridge({ children }: { children: ReactNode }) {
+function AuthBootstrap({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const accessToken = useAppSelector((s) => s.auth.accessToken);
+  const user = useAppSelector((s) => s.auth.user);
+  const bootstrapped = useRef(false);
+
+  // On mount, fetch /me to populate user (cookies are sent automatically).
+  // This runs once per app load.
+  useEffect(() => {
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
+    api
+      .get('/auth/me')
+      .then((res) => {
+        if (res.data?.success && res.data.data?.user) {
+          dispatch(hydrateUser(res.data.data.user));
+        }
+      })
+      .catch(() => {
+        // No valid cookie — user remains null
+      });
+  }, [dispatch]);
 
   useEffect(() => {
     bindAxiosAuth({
-      getAccessToken: () => accessToken,
       onUnauthorized: () => {
         dispatch(logout());
         router.replace('/login');
       },
-      onTokenRefreshed: (newAccess, newRefresh) => {
-        dispatch(refreshSuccess({ accessToken: newAccess, refreshToken: newRefresh }));
-      },
     });
-  }, [accessToken, dispatch, router]);
+  }, [dispatch, router]);
+
+  if (!user) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f5f7fa',
+        }}
+      >
+        <Spin size="large" tip="Checking session…" />
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
 
 function ThemedShell({ children }: { children: ReactNode }) {
-  const mode = useUI((s) => s.ui.themeMode);
+  const mode = useAppSelector((s) => s.ui.themeMode);
   const theme = getTheme(mode);
-  // Sync html data attribute for any non-Antd styles
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.dataset.theme = mode;
@@ -71,25 +99,13 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <Provider store={storeRef.current}>
-      <PersistGate
-        loading={
-          <div style={{ padding: 24 }}>
-            <Spin />
-          </div>
-        }
-        persistor={persistor.persistor}
-      >
-        <AntdRegistry>
-          <ThemedShell>
-            <AuthBridge>{children}</AuthBridge>
-          </ThemedShell>
-        </AntdRegistry>
-      </PersistGate>
+      <AntdRegistry>
+        <ThemedShell>
+          <AuthBootstrap>{children}</AuthBootstrap>
+        </ThemedShell>
+      </AntdRegistry>
     </Provider>
   );
 }
 
-// Re-export ThemeMode for convenience
 export type { ThemeMode };
-// Reference antdTheme to keep the import for potential future use
-void antdTheme;

@@ -3,8 +3,7 @@ import reducer, {
   loginSuccess,
   loginFailure,
   logout,
-  refreshSuccess,
-  refreshFailure,
+  hydrateUser,
   type AuthState,
 } from './authSlice';
 
@@ -19,8 +18,6 @@ const user = {
 describe('authSlice', () => {
   const initial: AuthState = {
     user: null,
-    accessToken: null,
-    refreshToken: null,
     loading: false,
     error: null,
     isAuthenticated: false,
@@ -31,25 +28,17 @@ describe('authSlice', () => {
   });
 
   it('loginRequest sets loading + clears error', () => {
-    expect(reducer({ ...initial, error: 'old' }, loginRequest({ email: 'a', password: 'b' }))).toEqual({
+    expect(
+      reducer({ ...initial, error: 'old' }, loginRequest({ email: 'a', password: 'b' })),
+    ).toEqual({
       ...initial,
       error: null,
       loading: true,
     });
   });
 
-  it('loginSuccess sets tokens + user + isAuthenticated', () => {
-    const state = reducer(
-      initial,
-      loginSuccess({
-        accessToken: 'A',
-        refreshToken: 'R',
-        expiresIn: 900,
-        user,
-      }),
-    );
-    expect(state.accessToken).toBe('A');
-    expect(state.refreshToken).toBe('R');
+  it('loginSuccess sets user + isAuthenticated', () => {
+    const state = reducer(initial, loginSuccess({ user }));
     expect(state.user).toEqual(user);
     expect(state.isAuthenticated).toBe(true);
     expect(state.loading).toBe(false);
@@ -62,11 +51,9 @@ describe('authSlice', () => {
     expect(state.isAuthenticated).toBe(false);
   });
 
-  it('logout clears everything', () => {
+  it('logout clears user and isAuthenticated', () => {
     const logged: AuthState = {
       user,
-      accessToken: 'A',
-      refreshToken: 'R',
       loading: false,
       error: null,
       isAuthenticated: true,
@@ -74,21 +61,15 @@ describe('authSlice', () => {
     expect(reducer(logged, logout())).toEqual(initial);
   });
 
-  it('refreshSuccess updates tokens', () => {
-    const state = reducer(
-      { ...initial, accessToken: 'old', refreshToken: 'old' },
-      refreshSuccess({ accessToken: 'new', refreshToken: 'new' }),
-    );
-    expect(state.accessToken).toBe('new');
-    expect(state.refreshToken).toBe('new');
+  it('hydrateUser sets user from /me', () => {
+    const state = reducer(initial, hydrateUser(user));
+    expect(state.user).toEqual(user);
+    expect(state.isAuthenticated).toBe(true);
   });
 
-  it('refreshFailure clears tokens and user', () => {
-    const state = reducer(
-      { ...initial, accessToken: 'A', refreshToken: 'R', user, isAuthenticated: true },
-      refreshFailure(),
-    );
-    expect(state.accessToken).toBeNull();
+  it('hydrateUser with null clears', () => {
+    const state = reducer({ ...initial, user, isAuthenticated: true }, hydrateUser(null));
+    expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
   });
 });

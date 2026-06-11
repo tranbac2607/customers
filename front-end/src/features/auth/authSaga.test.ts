@@ -6,12 +6,9 @@ import type { ApiResponse, LoginResponse } from '@/types/api';
 describe('handleLogin saga', () => {
   const action = loginRequest({ email: 'admin@example.com', password: 'Admin@123' });
 
-  it('dispatches loginSuccess on 2xx success', () => {
+  it('dispatches loginSuccess with user on 2xx success', () => {
     const gen = handleLogin(action);
-    const next = gen.next();
-    expect(next.value).toEqual(
-      expect.objectContaining({ type: 'CALL' }),
-    );
+    expect(gen.next().value).toEqual(expect.objectContaining({ type: 'CALL' }));
 
     const successBody: ApiResponse<LoginResponse> = {
       success: true,
@@ -30,22 +27,13 @@ describe('handleLogin saga', () => {
     };
 
     const step = gen.next({ data: successBody } as never);
-    expect(step.value).toEqual(
-      put(
-        loginSuccess({
-          accessToken: 'A',
-          refreshToken: 'R',
-          expiresIn: 900,
-          user: successBody.data.user,
-        }),
-      ),
-    );
+    expect(step.value).toEqual(put(loginSuccess({ user: successBody.data.user })));
     expect(gen.next().done).toBe(true);
   });
 
   it('dispatches loginFailure on API error body', () => {
     const gen = handleLogin(action);
-    gen.next(); // call
+    gen.next();
     const failBody: ApiResponse<never> = {
       success: false,
       error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' },
@@ -57,7 +45,7 @@ describe('handleLogin saga', () => {
 
   it('dispatches loginFailure on thrown exception', () => {
     const gen = handleLogin(action);
-    gen.next(); // call
+    gen.next();
     const err = {
       response: { data: { error: { code: 'BOOM', message: 'Server error' } } },
       message: 'fail',

@@ -31,6 +31,11 @@ export interface Paginated<T> {
   pagination: PaginationMeta;
 }
 
+/**
+ * The login API still returns the tokens in the response body (kept for
+ * backwards compatibility and non-browser clients), but the browser FE
+ * does not read them — it relies on the httpOnly cookies set by the BE.
+ */
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;

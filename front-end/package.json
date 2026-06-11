@@ -28,7 +28,6 @@
     "react-hook-form": "^7.65.0",
     "react-redux": "^9.2.0",
     "react-toastify": "^11.1.0",
-    "redux-persist": "^6.0.0",
     "redux-saga": "^1.4.0",
     "zod": "^4.4.3"
   },
