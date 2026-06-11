@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
+    "module": "node16",
     "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": "src",
@@ -10,11 +10,12 @@
     "strictNullChecks": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "baseUrl": "src",
     "paths": {
       "@/*": ["*"]

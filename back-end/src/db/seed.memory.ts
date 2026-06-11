@@ -10,7 +10,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
   process.env.JWT_REFRESH_SECRET ??= 'seed-refresh-secret-32chars';
 
   // Import after env is set so config/env picks up the URI
-  const { seed } = await import('./seed');
+  const { seed } = await import('./seed.js');
   await seed();
   await mem.stop();
   process.exit(0);

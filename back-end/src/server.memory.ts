@@ -18,7 +18,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
   process.env.NODE_ENV = process.env.NODE_ENV ?? 'development';
   if (!process.env.PORT) process.env.PORT = '4444';
 
-  const { startServer } = await import('./bootstrap');
+  const { startServer } = await import('./bootstrap.js');
   await startServer();
 
   const shutdown = async (): Promise<void> => {

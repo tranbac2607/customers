@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import request from 'supertest';
 import { createApp } from '@/app';
 import { authRepository } from '@/modules/auth/auth.repository';
+import { hashPassword } from '@/utils/password';
 
 let mongo: MongoMemoryServer;
 let app: ReturnType<typeof createApp>;
@@ -20,7 +21,7 @@ beforeAll(async () => {
   await mongoose.connect(mongo.getUri());
 
   // Seed admin
-  const passwordHash = await (await import('@/utils/password')).hashPassword('Admin@123');
+  const passwordHash = await hashPassword('Admin@123');
   await authRepository.create({
     email: 'admin@example.com',
     passwordHash,
@@ -75,17 +76,13 @@ describe('Auth', () => {
       .post('/api/auth/login')
       .send({ email: 'admin@example.com', password: 'Admin@123' });
     const oldRefresh = login.body.data.refreshToken;
-    const res = await request(app)
-      .post('/api/auth/refresh')
-      .send({ refreshToken: oldRefresh });
+    const res = await request(app).post('/api/auth/refresh').send({ refreshToken: oldRefresh });
     expect(res.status).toBe(200);
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).not.toBe(oldRefresh);
 
     // Reuse → 401
-    const res2 = await request(app)
-      .post('/api/auth/refresh')
-      .send({ refreshToken: oldRefresh });
+    const res2 = await request(app).post('/api/auth/refresh').send({ refreshToken: oldRefresh });
     expect(res2.status).toBe(401);
   });
 });
