@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useRef } from 'react';
 import { Provider } from 'react-redux';
-import { ConfigProvider, App as AntdApp, Spin } from 'antd';
+import { ConfigProvider, App as AntdApp } from 'antd';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,29 +13,40 @@ import { bindAxiosAuth } from '@/lib/axios';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { hydrateUser, logout } from '@/features/auth/authSlice';
-import { api } from '@/lib/axios';
+import { env } from '@/lib/env';
 
 function AuthBootstrap({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const user = useAppSelector((s) => s.auth.user);
   const bootstrapped = useRef(false);
 
   // On mount, fetch /me to populate user (cookies are sent automatically).
-  // This runs once per app load.
+  // Uses raw fetch() instead of the axios instance so the 401 response from
+  // an unauthenticated visitor does not trigger the auto-refresh / redirect
+  // side effects in the axios interceptor.
   useEffect(() => {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
-    api
-      .get('/auth/me')
-      .then((res) => {
-        if (res.data?.success && res.data.data?.user) {
-          dispatch(hydrateUser(res.data.data.user));
+
+    let cancelled = false;
+    fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
+      credentials: 'include',
+    })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (!res.ok) return; // 401 or other — leave user as null
+        const data = await res.json();
+        if (data?.success && data.data?.user) {
+          dispatch(hydrateUser(data.data.user));
         }
       })
       .catch(() => {
-        // No valid cookie — user remains null
+        // Network error — ignore; user stays null
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch]);
 
   useEffect(() => {
@@ -47,22 +58,9 @@ function AuthBootstrap({ children }: { children: ReactNode }) {
     });
   }, [dispatch, router]);
 
-  if (!user) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#f5f7fa',
-        }}
-      >
-        <Spin size="large" tip="Checking session…" />
-      </div>
-    );
-  }
-
+  // Never block rendering on auth state. proxy.ts handles redirects for
+  // protected routes; this component only enriches the UI with user info
+  // when a valid cookie is present.
   return <>{children}</>;
 }
 
