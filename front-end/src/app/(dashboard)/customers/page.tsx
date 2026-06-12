@@ -237,7 +237,7 @@ export default function CustomersPage() {
           gap: 12,
         }}
       >
-        <div>
+        <div style={{ minWidth: 0, flex: '1 1 240px' }}>
           <Title level={2} style={{ marginBottom: 4 }}>
             Customers
           </Title>
@@ -245,7 +245,7 @@ export default function CustomersPage() {
             Manage your customer records and their identity documents.
           </Paragraph>
         </div>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={() => fetchList()}>
             Refresh
           </Button>
@@ -258,46 +258,54 @@ export default function CustomersPage() {
       </div>
 
       <Card styles={{ body: { padding: 0 } }}>
-        <div style={{ padding: 16, borderBottom: '1px solid #f0f0f0' }}>
-          <Space style={{ width: '100%', justifyContent: 'space-between' }} wrap>
-            <Input
-              allowClear
-              prefix={<SearchOutlined />}
-              placeholder="Search by name, email, phone, nationality, occupation…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ width: 360, maxWidth: '100%' }}
+        <div
+          style={{
+            padding: 16,
+            borderBottom: '1px solid #f0f0f0',
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: 12,
+            alignItems: 'center',
+          }}
+        >
+          <Input
+            allowClear
+            prefix={<SearchOutlined />}
+            placeholder="Search by name, email, phone…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ minWidth: 240, flex: '1 1 240px', maxWidth: 360 }}
+          />
+          <Space wrap>
+            <Text type="secondary">Sort:</Text>
+            <Select
+              value={`${sortBy}:${order}`}
+              onChange={(v) => {
+                const [s, o] = v.split(':');
+                setSortBy(s as typeof sortBy);
+                setOrder(o as typeof order);
+                setPage(1);
+                dispatch(
+                  listRequest({
+                    page: 1,
+                    limit,
+                    search: search || undefined,
+                    sortBy: s as typeof sortBy,
+                    order: o as typeof order,
+                  }),
+                );
+              }}
+              options={[
+                { value: 'createdAt:desc', label: 'Newest first' },
+                { value: 'createdAt:asc', label: 'Oldest first' },
+                { value: 'fullName:asc', label: 'Name A → Z' },
+                { value: 'fullName:desc', label: 'Name Z → A' },
+                { value: 'dateOfBirth:desc', label: 'Youngest first' },
+                { value: 'dateOfBirth:asc', label: 'Oldest first' },
+              ]}
+              style={{ minWidth: 180 }}
             />
-            <Space>
-              <Text type="secondary">Sort:</Text>
-              <Select
-                value={`${sortBy}:${order}`}
-                onChange={(v) => {
-                  const [s, o] = v.split(':');
-                  setSortBy(s as typeof sortBy);
-                  setOrder(o as typeof order);
-                  setPage(1);
-                  dispatch(
-                    listRequest({
-                      page: 1,
-                      limit,
-                      search: search || undefined,
-                      sortBy: s as typeof sortBy,
-                      order: o as typeof order,
-                    }),
-                  );
-                }}
-                options={[
-                  { value: 'createdAt:desc', label: 'Newest first' },
-                  { value: 'createdAt:asc', label: 'Oldest first' },
-                  { value: 'fullName:asc', label: 'Name A → Z' },
-                  { value: 'fullName:desc', label: 'Name Z → A' },
-                  { value: 'dateOfBirth:desc', label: 'Youngest first' },
-                  { value: 'dateOfBirth:asc', label: 'Oldest first' },
-                ]}
-                style={{ minWidth: 180 }}
-              />
-            </Space>
           </Space>
         </div>
         <Table<Customer>
@@ -305,7 +313,7 @@ export default function CustomersPage() {
           dataSource={items}
           columns={columns}
           loading={loading}
-          scroll={{ x: 1100 }}
+          scroll={{ x: 900 }}
           onChange={handleTableChange}
           pagination={{
             current: page,

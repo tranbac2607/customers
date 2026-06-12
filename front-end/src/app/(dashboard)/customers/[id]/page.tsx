@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -57,10 +57,15 @@ export default function CustomerDetailPage() {
     dispatch(deleteRequest(id!));
   };
 
-  // Watch for item disappearing from list (after delete)
+  // Watch for item disappearing from the store after delete. The guard
+  // prevents a duplicate toast: deleteSuccess sets `item = null` and the
+  // subsequent getRequest cleanup also calls clearCurrent (which sets
+  // `item = null` again), so without a one-shot guard the effect would
+  // fire twice.
+  const deleteToastShown = useRef(false);
   useEffect(() => {
-    if (!loading && !item && !error) {
-      // deleted
+    if (!loading && !item && !error && !deleteToastShown.current) {
+      deleteToastShown.current = true;
       toast.success('Customer deleted');
       router.replace('/customers');
     }
