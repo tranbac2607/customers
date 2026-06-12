@@ -40,7 +40,7 @@ import { COUNTRIES } from '@/store/customers/countries';
 import type { Customer } from '@/store/customers/customerTypes';
 import type { Gender, IdentityDocumentType } from '@/store/auth/authTypes';
 
-const {} = Typography;
+// (no-op)
 
 const identityDocSchema = z.object({
   type: z.enum(IDENTITY_DOCUMENT_TYPES, {

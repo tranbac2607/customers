@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, Typography, Space, Button, Skeleton, Result } from 'antd';
+import { Card, Typography, Button, Skeleton } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -14,6 +14,8 @@ import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Paragraph } = Typography;
 
+// CustomerForm pulls in react-hook-form + zodResolver; its module graph
+// is fragile under Turbopack's prerender pass. Load it client-side only.
 const CustomerForm = dynamic(
   () => import('@/features/customers/components/CustomerForm').then((m) => m.CustomerForm),
   { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
@@ -60,34 +62,23 @@ export function EditCustomerContent({ id }: EditCustomerContentProps) {
 
   if (getError && !item) {
     return (
-      <Result
-        status="error"
-        title="Failed to load customer"
-        subTitle={getError}
-        extra={
-          <Space>
-            <Button onClick={() => dispatch(getRequest(id))}>Try again</Button>
-            <Link href="/customers">
-              <Button type="primary">Back to list</Button>
-            </Link>
-          </Space>
-        }
-      />
+      <div style={{ textAlign: 'center', padding: 48 }}>
+        <Title level={3} style={{ marginBottom: 8 }}>
+          Failed to load customer
+        </Title>
+        <Paragraph type="secondary" style={{ marginBottom: 24 }}>
+          {getError}
+        </Paragraph>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <Button onClick={() => dispatch(getRequest(id))}>Try again</Button>
+          <Link href="/customers">Back to list</Link>
+        </div>
+      </div>
     );
   }
 
   if (!item) {
-    return (
-      <Result
-        status="404"
-        title="Customer not found"
-        extra={
-          <Link href="/customers">
-            <Button type="primary">Back to list</Button>
-          </Link>
-        }
-      />
-    );
+    return <CustomerNotFound />;
   }
 
   const handleSubmit = (values: CustomerFormValues) => {
@@ -112,13 +103,13 @@ export function EditCustomerContent({ id }: EditCustomerContentProps) {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <Link href={`/customers/${id}`}>
           <Button type="text" icon={<ArrowLeftOutlined />}>
             Back to detail
           </Button>
         </Link>
-      </Space>
+      </div>
       <Title level={2} style={{ marginBottom: 4 }}>
         Edit customer
       </Title>
@@ -133,6 +124,22 @@ export function EditCustomerContent({ id }: EditCustomerContentProps) {
           error={null}
         />
       </Card>
+    </div>
+  );
+}
+
+function CustomerNotFound() {
+  const titleStyle = { marginBottom: 8 };
+  const paragraphStyle = { marginBottom: 24 };
+  return (
+    <div>
+      <Title level={3} style={titleStyle}>
+        Customer not found
+      </Title>
+      <Paragraph type="secondary" style={paragraphStyle}>
+        The customer you&apos;re looking for doesn&apos;t exist.
+      </Paragraph>
+      <Link href="/customers">Back to list</Link>
     </div>
   );
 }
