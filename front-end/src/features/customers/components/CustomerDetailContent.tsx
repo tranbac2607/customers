@@ -100,9 +100,12 @@ export function CustomerDetailContent() {
         title="Failed to load"
         subTitle={error}
         extra={
-          <Link href="/customers">
-            <Button type="primary">Back to list</Button>
-          </Link>
+          <Space>
+            <Button onClick={() => dispatch(getRequest(id))}>Try again</Button>
+            <Link href="/customers">
+              <Button type="primary">Back to list</Button>
+            </Link>
+          </Space>
         }
       />
     );

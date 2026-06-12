@@ -72,9 +72,12 @@ export function EditCustomerContent() {
         title="Failed to load customer"
         subTitle={getError}
         extra={
-          <Link href="/customers">
-            <Button type="primary">Back to list</Button>
-          </Link>
+          <Space>
+            <Button onClick={() => dispatch(getRequest(id!))}>Try again</Button>
+            <Link href="/customers">
+              <Button type="primary">Back to list</Button>
+            </Link>
+          </Space>
         }
       />
     );
