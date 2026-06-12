@@ -189,7 +189,14 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const contentPadding = isMobile ? 12 : 24;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    // Outer Layout is pinned to 100vh with overflow: hidden so the
+    // browser never scrolls the whole page; the right-column
+    // <Layout> below is the only flex container that decides what
+    // scrolls (the Content). Together with the Sider staying at
+    // height: 100% (its default inside a fixed-height parent), this
+    // gives us a pinned Sider + pinned Header + a single scroll
+    // region for the page content.
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       {isMobile ? (
         <Drawer
           placement="left"
@@ -227,7 +234,10 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
           <SiderContent collapsed={collapsed} pathname={pathname} />
         </Sider>
       )}
-      <Layout>
+      {/* Right column: flex column so the Header can keep its
+          natural height while the Content absorbs the rest and
+          gets the only scrollbar. */}
+      <Layout style={{ display: 'flex', flexDirection: 'column' }}>
         <Header
           style={{
             background: '#fff',
@@ -237,6 +247,10 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
             justifyContent: 'space-between',
             boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
             gap: 8,
+            // flex: 0 0 auto — never shrink, never grow. The Sider
+            // above and the Content below own the rest of the
+            // vertical space.
+            flex: '0 0 auto',
           }}
         >
           <Button
@@ -275,6 +289,10 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
           style={{
             padding: contentPadding,
             background: '#f5f7fa',
+            // flex: 1 1 auto — absorb the remaining vertical space;
+            // overflow: auto — only this region gets a scrollbar.
+            flex: '1 1 auto',
+            overflow: 'auto',
           }}
         >
           {children}

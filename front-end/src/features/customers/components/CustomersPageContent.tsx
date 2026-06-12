@@ -108,17 +108,22 @@ export function CustomersPageContent() {
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           marginBottom: 16,
           flexWrap: 'wrap',
           gap: 12,
         }}
       >
         <div style={{ minWidth: 0, flex: '1 1 240px' }}>
-          <Title level={2} style={{ marginBottom: 4 }}>
+          {/* Antd Title ships with a non-zero margin-block-end and a
+              line-height tied to the heading scale; both fight
+              flex-centering against the 32px button. Reset margin
+              and pin line-height so the title and the button share
+              a vertical center. */}
+          <Title level={2} style={{ margin: 0, lineHeight: '32px' }}>
             Customers
           </Title>
-          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          <Paragraph type="secondary" style={{ marginBottom: 0, marginTop: 4 }}>
             Manage your customer records and their identity documents.
           </Paragraph>
         </div>

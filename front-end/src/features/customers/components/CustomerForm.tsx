@@ -555,7 +555,11 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                       )}
                     />
                   </Col>
-                  <Col xs={24} sm={10}>
+                  {/* paddingTop: 30 ≈ Antd's label height (24px) + a
+                      little slack so the input (not the label) of
+                      the Issue place Form.Item ends up on the same
+                      baseline as the Remove button on the right. */}
+                  <Col xs={24} sm={10} style={{ paddingTop: 30 }}>
                     <Controller
                       control={control}
                       name={`identityDocuments.${i}.issuePlace`}
@@ -586,7 +590,11 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                       )}
                     />
                   </Col>
-                  <Col xs={24} sm={2} style={{ textAlign: 'right' }}>
+                  <Col
+                    xs={24}
+                    sm={2}
+                    style={{ textAlign: 'right', alignSelf: 'flex-end', paddingTop: 30 }}
+                  >
                     <Button danger type="text" icon={<DeleteOutlined />} onClick={() => remove(i)}>
                       Remove
                     </Button>

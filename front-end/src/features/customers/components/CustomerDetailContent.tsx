@@ -143,7 +143,7 @@ export function CustomerDetailContent({ id }: CustomerDetailContentProps) {
       <Row gutter={[16, 16]}>
         <Col xs={24} md={16}>
           <Card
-            styles={{ header: { paddingTop: 20 } }}
+            styles={{ header: { paddingTop: 20, paddingBottom: 20 } }}
             title={
               <Space size="middle">
                 <div
