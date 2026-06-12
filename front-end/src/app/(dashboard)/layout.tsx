@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, Tooltip } from 'antd';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, Tooltip, Spin } from 'antd';
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -17,9 +17,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout } from '@/features/auth/authSlice';
+import { hydrateUser, logout } from '@/features/auth/authSlice';
 import { toggleThemeMode } from '@/features/ui/uiSlice';
 import { api } from '@/lib/axios';
+import { env } from '@/lib/env';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -36,18 +37,45 @@ const menuItems = [
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const themeMode = useAppSelector((s) => s.ui.themeMode);
 
-  // Find the best matching menu key (handles nested paths)
-  const selectedKey =
-    menuItems
-      .map((m) => m.key)
-      .filter((k) => k !== '/' && pathname?.startsWith(k))
-      .sort((a, b) => b.length - a.length)[0] || (pathname === '/' ? '/' : null);
+  // Run on every layout mount: hit /me with the cookie, then either:
+  //   - populate user state (and render the chrome), or
+  //   - bounce to /login preserving the original path
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
+      credentials: 'include',
+    })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 401) {
+          const next = encodeURIComponent(pathname || '/');
+          router.replace(`/login?next=${next}`);
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.success && data.data?.user) {
+          dispatch(hydrateUser(data.data.user));
+        }
+      })
+      .catch(() => {
+        // Network failure — keep user null; children will be rendered with
+        // a loading state. Subsequent API calls will surface errors normally.
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, dispatch, router]);
 
   const handleLogout = async () => {
     try {
@@ -78,6 +106,29 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       },
     ],
   };
+
+  if (!authChecked) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f5f7fa',
+        }}
+      >
+        <Spin size="large" tip="Checking session…" />
+      </div>
+    );
+  }
+
+  // Find the best matching menu key (handles nested paths)
+  const selectedKey =
+    menuItems
+      .map((m) => m.key)
+      .filter((k) => k !== '/' && pathname?.startsWith(k))
+      .sort((a, b) => b.length - a.length)[0] || (pathname === '/' ? '/' : null);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
