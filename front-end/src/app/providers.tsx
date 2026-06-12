@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useRef, useSyncExternalStore } from 'react';
 import { Provider } from 'react-redux';
 import { ConfigProvider, App as AntdApp, Spin } from 'antd';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import NextTopLoader from 'nextjs-toploader';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -23,6 +23,18 @@ function AuthBridge({ children }: { children: ReactNode }) {
   useEffect(() => {
     bindAxiosAuth({
       onUnauthorized: (expired?: boolean) => {
+        if (expired) {
+          // The auto-refresh path in lib/axios.ts fires this when the
+          // refresh token has been rejected. Toast so the user gets
+          // immediate feedback before the redirect lands; the
+          // LoginContent alert on /login?expired=1 is the persistent
+          // banner that follows.
+          toast.error('Your session has expired. Please sign in again.');
+        }
+        // For onUnauthorized(false) the only current caller is the
+        // avatar menu's manual logout (DashboardLayoutContent.handleLogout),
+        // which already toasts "Signed out" — staying silent here
+        // avoids a duplicate.
         dispatch(logout());
         // Pass ?expired=1 so the login page can show a helpful message
         router.replace(expired ? '/login?expired=1' : '/login');

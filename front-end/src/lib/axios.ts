@@ -62,14 +62,22 @@ api.interceptors.response.use(
     const original = err.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const url = original?.url ?? '';
 
-    // Endpoints that MUST NOT trigger the auto-refresh path:
+    // Endpoints that MUST NOT trigger the auto-refresh path AND
+    // must NOT be surfaced via the interceptor's generic toast
+    // (each of them has its own UI):
     //   - /auth/login     — 401 = wrong creds; refreshing won't help.
+    //                       LoginContent toasts specific messages
+    //                       based on the saga's LoginErrorCode.
     //   - /auth/refresh   — this IS the refresh endpoint; refreshing
-    //                       it would loop forever.
+    //                       it would loop forever. A failure here is
+    //                       surfaced via providers.tsx's onUnauthorized
+    //                       toast ("Your session has expired…").
     //   - /auth/logout    — 401 = token already invalid; we don't need
     //                       to refresh just to log out a dead session.
+    //                       handleLogout already toasts "Signed out".
     //   - /auth/register  — 401/409 = email conflict / validation;
-    //                       refreshing won't help.
+    //                       refreshing won't help. Not UI-exposed
+    //                       today but kept consistent.
     //
     // /auth/me is intentionally NOT in this list: when the access
     // token expires (15 min) but the refresh token is still valid
@@ -144,13 +152,25 @@ api.interceptors.response.use(
       }
     }
 
-    // Note: we deliberately do NOT show a toast here. The calling code
-    // (saga catch → reducer → page useEffect) is responsible for
-    // surfacing the error to the user. Without this, every errored API
-    // call produced TWO toasts: one from the interceptor and one from
-    // the page. The auto-refresh path above also calls onUnauthorized
-    // when the refresh itself fails, so the user is still redirected
-    // when their session dies.
+    // Generic user-facing surface for failures the caller wouldn't
+    // otherwise announce: BE is up but broke (5xx, or the Vercel
+    // proxy returned 502 BAD_GATEWAY), or the request never reached
+    // the BE at all (network / DNS / offline — `status` is undefined).
+    //
+    // 401 is intentionally NOT toasted here: the auto-refresh block
+    // above already handles it (transparent retry on success,
+    // onUnauthorized toast on permanent failure).
+    //
+    // /auth/* endpoints are skipped because they each have their own
+    // UX (see the isAuthExempt comment above for the full rationale).
+    if (!isAuthExempt) {
+      if (status && status >= 500) {
+        toast.error('Server error. Please try again in a moment.');
+      } else if (!status) {
+        toast.error('Network error. Please check your connection.');
+      }
+    }
+
     return Promise.reject(err);
   },
 );
