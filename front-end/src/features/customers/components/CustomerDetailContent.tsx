@@ -44,14 +44,18 @@ export function CustomerDetailContent() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { item, loading, error } = useAppSelector((s) => s.customers.current);
-  const { loading: mutationLoading, error: mutationError } = useAppSelector(
-    (s) => s.customers.mutation,
-  );
+  const {
+    loading: mutationLoading,
+    error: mutationError,
+    lastDeletedId,
+  } = useAppSelector((s) => s.customers.mutation);
 
   const fetchInitiated = useRef(false);
   const retryCount = useRef(0);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const deleteInitiated = useRef(false);
+  // Track deletion in-flight using Redux state, not a ref
+  // (refs get reset by StrictMode cleanup before the saga completes)
+  const prevDeleteSuccessId = useRef<string | null>(null);
 
   const doFetch = useCallback(() => {
     if (id) dispatch(getRequest(id));
@@ -82,17 +86,17 @@ export function CustomerDetailContent() {
   }, [loading, item, error, doFetch]);
 
   const handleDelete = () => {
-    deleteInitiated.current = true;
     dispatch(deleteRequest(id!));
   };
 
+  // Detect deletion success via Redux state — survives StrictMode cleanup
   useEffect(() => {
-    if (deleteInitiated.current && !loading && !item && !error) {
-      deleteInitiated.current = false;
+    if (lastDeletedId && lastDeletedId === id && prevDeleteSuccessId.current !== lastDeletedId) {
+      prevDeleteSuccessId.current = lastDeletedId;
       toast.success('Customer deleted');
       router.replace('/customers');
     }
-  }, [loading, item, error, router]);
+  }, [lastDeletedId, id, router]);
 
   // Toast on delete failure
   useEffect(() => {

@@ -138,6 +138,10 @@ const slice = createSlice({
       state.list.items = state.list.items.filter((c) => c.id !== action.payload);
       state.list.pagination.total = Math.max(0, state.list.pagination.total - 1);
       state.mutation.lastDeletedId = action.payload;
+      // Clear current item so the detail/edit view knows deletion succeeded
+      if (state.current.item?.id === action.payload) {
+        state.current.item = null;
+      }
     },
     deleteFailure(state, action: PayloadAction<string>) {
       state.mutation.loading = false;
