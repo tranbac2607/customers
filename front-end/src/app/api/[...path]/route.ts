@@ -11,9 +11,14 @@ const BE_BASE = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
 export const maxDuration = 60;
 
 // Headers we must NOT forward in either direction. RFC 7230 hop-by-hop
-// headers + Host (Node fetch rejects if mismatched) + Cookie (we
-// forward the parsed body, the raw header would re-encode and break
-// parsing on the BE).
+// headers + Host (Node fetch rejects if mismatched).
+//
+// Cookie is INTENTIONALLY NOT in this set: the FE-domain httpOnly
+// cookies (accessToken, refreshToken) that the BE sets on login
+// and refresh MUST be forwarded back to the BE on subsequent
+// requests, otherwise the BE's auth middleware (which reads
+// `req.cookies.accessToken`) cannot identify the user and returns
+// 401 on every protected endpoint.
 const HOP_BY_HOP = new Set([
   'connection',
   'keep-alive',
@@ -24,7 +29,6 @@ const HOP_BY_HOP = new Set([
   'transfer-encoding',
   'upgrade',
   'host',
-  'cookie',
 ]);
 
 async function proxy(

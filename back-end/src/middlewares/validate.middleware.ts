@@ -19,7 +19,8 @@ export const validate =
     }
     // assign parsed (coerced) data back
     if (source === 'body') req.body = result.data;
-    else if (source === 'query') (req as unknown as { validatedQuery: unknown }).validatedQuery = result.data;
+    else if (source === 'query')
+      (req as unknown as { validatedQuery: unknown }).validatedQuery = result.data;
     else (req as unknown as { validatedParams: unknown }).validatedParams = result.data;
 
     next();

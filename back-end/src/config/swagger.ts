@@ -29,15 +29,15 @@ export const swaggerSpec = swaggerJSDoc({
       },
       schemas: allSchemas,
     },
-    tags: [
-      { name: 'Health' },
-      { name: 'Auth' },
-      { name: 'Customers' },
-    ],
+    tags: [{ name: 'Health' }, { name: 'Auth' }, { name: 'Customers' }],
   },
   apis: isProduction
-    ? [path.join(__dirname, '..', 'modules', '**', '*.{ts,js}'), path.join(__dirname, '..', 'app.js')]
+    ? [
+        path.join(__dirname, '..', 'modules', '**', '*.{ts,js}'),
+        path.join(__dirname, '..', 'app.js'),
+      ]
     : ['./src/modules/**/*.ts', './src/app.ts'],
 });
 
-export const isSwaggerEnabled = env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';
+export const isSwaggerEnabled =
+  env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';

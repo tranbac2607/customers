@@ -38,9 +38,7 @@ export const errorMiddleware: ErrorRequestHandler = (
 
   // Mongoose
   if (err instanceof mongoose.Error.ValidationError) {
-    const details = Object.fromEntries(
-      Object.entries(err.errors).map(([k, v]) => [k, v.message]),
-    );
+    const details = Object.fromEntries(Object.entries(err.errors).map(([k, v]) => [k, v.message]));
     const body: ApiFailure = {
       success: false,
       error: { code: 'MONGOOSE_VALIDATION', message: err.message, details },
@@ -62,7 +60,11 @@ export const errorMiddleware: ErrorRequestHandler = (
   if ((err as { code?: number }).code === 11000) {
     const body: ApiFailure = {
       success: false,
-      error: { code: 'DUPLICATE_KEY', message: 'Duplicate value', details: (err as { keyValue?: unknown }).keyValue },
+      error: {
+        code: 'DUPLICATE_KEY',
+        message: 'Duplicate value',
+        details: (err as { keyValue?: unknown }).keyValue,
+      },
     };
     res.status(409).json(body);
     return;
@@ -87,8 +89,7 @@ export const errorMiddleware: ErrorRequestHandler = (
   }
 
   // Default 500
-  const message =
-    err instanceof Error ? err.message : 'Unexpected error';
+  const message = err instanceof Error ? err.message : 'Unexpected error';
   const stack = err instanceof Error ? err.stack : undefined;
   logger.error({ msg: 'Unhandled error', err: message, stack, requestId: req.id });
 

@@ -6,9 +6,9 @@ import Link from 'next/link';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { PAGE_SIZE_OPTIONS } from '@/lib/constants';
-import { IDENTITY_DOCUMENT_LABELS } from '@/store/customers/customerTypes';
 import type { Customer } from '@/store/customers/customerTypes';
 import type { PaginationMeta } from '@/types/api';
+import { truncateFullName } from '@/features/customers/utils';
 
 interface CustomerListProps {
   items: Customer[];
@@ -45,8 +45,18 @@ export function CustomerList({
       render: (_, record) => (
         <Space>
           <Avatar style={{ background: '#1677ff' }} icon={<UserOutlined />} />
-          <div>
-            <div style={{ fontWeight: 600 }}>{record.fullName}</div>
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              title={record.fullName}
+            >
+              {truncateFullName(record.fullName)}
+            </div>
             <span style={{ fontSize: 12, color: '#8c8c8c' }}>{record.email}</span>
           </div>
         </Space>

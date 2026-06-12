@@ -34,6 +34,7 @@ import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { resetCurrent, deleteRequest, getRequest } from '@/store/customers/customersSlice';
 import { IDENTITY_DOCUMENT_LABELS, GENDER_LABELS } from '@/store/customers/customerTypes';
+import { calculateAge } from '@/features/customers/utils';
 
 const { Title, Text } = Typography;
 
@@ -117,7 +118,7 @@ export function CustomerDetailContent({ id }: CustomerDetailContentProps) {
     );
   }
 
-  const age = dayjs().diff(dayjs(item.dateOfBirth), 'year');
+  const age = calculateAge(item.dateOfBirth);
 
   return (
     <div>

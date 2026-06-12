@@ -55,11 +55,7 @@ router.use(authenticate);
  *                     pagination: { $ref: '#/components/schemas/Pagination' }
  *       401: { description: Unauthorized }
  */
-router.get(
-  '/',
-  validate(listCustomersQuerySchema, 'query'),
-  asyncHandler(customerController.list),
-);
+router.get('/', validate(listCustomersQuerySchema, 'query'), asyncHandler(customerController.list));
 
 /**
  * @openapi
@@ -77,11 +73,7 @@ router.get(
  *       200: { description: Customer object }
  *       404: { description: Not found }
  */
-router.get(
-  '/:id',
-  validate(idParamSchema, 'params'),
-  asyncHandler(customerController.get),
-);
+router.get('/:id', validate(idParamSchema, 'params'), asyncHandler(customerController.get));
 
 /**
  * @openapi
@@ -100,11 +92,7 @@ router.get(
  *       400: { description: Validation error }
  *       409: { description: Email already exists }
  */
-router.post(
-  '/',
-  validate(createCustomerSchema),
-  asyncHandler(customerController.create),
-);
+router.post('/', validate(createCustomerSchema), asyncHandler(customerController.create));
 
 /**
  * @openapi
@@ -150,11 +138,7 @@ router.put(
  *       204: { description: No content }
  *       404: { description: Not found }
  */
-router.delete(
-  '/:id',
-  validate(idParamSchema, 'params'),
-  asyncHandler(customerController.remove),
-);
+router.delete('/:id', validate(idParamSchema, 'params'), asyncHandler(customerController.remove));
 
 // Swagger component schemas (registered once via app.ts registration of paths file)
 export const customerSchemas = {

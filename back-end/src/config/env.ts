@@ -16,7 +16,11 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES: z.string().default('15m'),
   JWT_REFRESH_EXPIRES: z.string().default('7d'),
 
-  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
+  RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
 
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).default('info'),

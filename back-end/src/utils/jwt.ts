@@ -12,10 +12,14 @@ export interface RefreshTokenPayload extends JwtPayload {
 }
 
 export const signAccessToken = (payload: { sub: string; role: 'admin' | 'user' }): string =>
-  jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: env.JWT_ACCESS_EXPIRES as jwt.SignOptions['expiresIn'] });
+  jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+    expiresIn: env.JWT_ACCESS_EXPIRES as jwt.SignOptions['expiresIn'],
+  });
 
 export const signRefreshToken = (payload: { sub: string; jti: string }): string =>
-  jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES as jwt.SignOptions['expiresIn'] });
+  jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+    expiresIn: env.JWT_REFRESH_EXPIRES as jwt.SignOptions['expiresIn'],
+  });
 
 export const verifyAccessToken = (token: string): AccessTokenPayload =>
   jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenPayload;

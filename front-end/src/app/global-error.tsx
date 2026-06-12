@@ -23,8 +23,7 @@ export default function GlobalError({
       <body
         style={{
           margin: 0,
-          fontFamily:
-            'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           background: '#f5f7fa',
         }}
       >

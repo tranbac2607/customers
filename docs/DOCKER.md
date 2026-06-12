@@ -21,6 +21,7 @@ docker run --rm -p 4000:4000 \
 ```
 
 ## Image size
+
 ~150 MB (Alpine + production deps only).
 
 ## Why Docker

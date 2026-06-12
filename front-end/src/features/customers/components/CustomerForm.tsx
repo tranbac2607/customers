@@ -39,6 +39,10 @@ import {
 import { COUNTRIES } from '@/store/customers/countries';
 import type { Customer } from '@/store/customers/customerTypes';
 import type { Gender, IdentityDocumentType } from '@/store/auth/authTypes';
+import {
+  CUSTOMER_DATE_FORMAT,
+  MAX_IDENTITY_DOCS_PER_CUSTOMER,
+} from '@/features/customers/constants';
 
 // (no-op)
 
@@ -94,7 +98,10 @@ const formSchema = z.object({
   identityDocuments: z
     .array(identityDocSchema)
     .min(1, 'At least one identity document is required')
-    .max(10, 'Up to 10 identity documents allowed')
+    .max(
+      MAX_IDENTITY_DOCS_PER_CUSTOMER,
+      `Up to ${MAX_IDENTITY_DOCS_PER_CUSTOMER} identity documents allowed`,
+    )
     .superRefine((arr, ctx) => {
       const seen = new Set<string>();
       arr.forEach((d, i) => {
@@ -230,7 +237,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                     {...field}
                     value={field.value as Dayjs | undefined}
                     onChange={(v) => field.onChange(v)}
-                    format="YYYY-MM-DD"
+                    format={CUSTOMER_DATE_FORMAT}
                     size="large"
                     style={{ width: '100%' }}
                     placeholder="Select date of birth"
@@ -373,6 +380,10 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
           <Button
             type="dashed"
             icon={<PlusOutlined />}
+            // Disable at the BE-mandated cap so the user can't queue
+            // a submit the BE would reject. Mirrors the zod .max(...)
+            // check above so the validation stays in sync.
+            disabled={fields.length >= MAX_IDENTITY_DOCS_PER_CUSTOMER}
             onClick={() =>
               append({
                 type: 'CCCD',
@@ -528,7 +539,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                             {...field}
                             value={field.value as Dayjs | undefined}
                             onChange={(v) => field.onChange(v)}
-                            format="YYYY-MM-DD"
+                            format={CUSTOMER_DATE_FORMAT}
                             style={{ width: '100%' }}
                           />
                         </Form.Item>

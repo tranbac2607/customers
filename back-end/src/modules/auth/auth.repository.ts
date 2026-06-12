@@ -19,11 +19,7 @@ export const authRepository = {
   async removeRefreshToken(userId: string, hashedToken: string): Promise<void> {
     await User.updateOne({ _id: userId }, { $pull: { refreshTokens: hashedToken } });
   },
-  async rotateRefreshToken(
-    userId: string,
-    oldHashed: string,
-    newHashed: string,
-  ): Promise<void> {
+  async rotateRefreshToken(userId: string, oldHashed: string, newHashed: string): Promise<void> {
     await User.updateOne({ _id: userId }, { $set: { refreshTokens: [newHashed] } });
   },
   async updateLastLogin(userId: string): Promise<void> {

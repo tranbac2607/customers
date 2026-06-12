@@ -53,24 +53,24 @@ export function CustomerSearch({ control, loading, onSearch, onClear }: Customer
             />
           )}
         />
+        {/* Phone search accepts the same international format as the
+            form (+, digits, space, parens, dashes). The BE's search
+            filter strips non-digits before building the regex
+            (back-end customer.repository.ts), so a pasted value still
+            matches a stored phone entered with spacing. No client-side
+            normalisation needed here. */}
         <Controller
           control={control}
           name="phone"
           render={({ field }) => (
             <Input
               {...field}
-              placeholder="Phone"
+              placeholder="+84 901 234 567"
               allowClear
               size="middle"
               inputMode="tel"
-              maxLength={15}
-              style={{ width: 160 }}
-              onChange={(e) => {
-                // Phone numbers are digits-only; strip everything else
-                // as the user types so the value sent to the BE is clean.
-                const digits = e.target.value.replace(/\D/g, '');
-                field.onChange(digits);
-              }}
+              maxLength={30}
+              style={{ width: 200 }}
             />
           )}
         />
