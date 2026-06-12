@@ -37,34 +37,23 @@ const menuItems = [
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const authProbed = useRef(false);
+  const userProbed = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const themeMode = useAppSelector((s) => s.ui.themeMode);
 
-  // Hit /me once per layout mount. The Next.js App Router keeps this
-  // layout mounted while the user navigates between its child routes, so
-  // a `[]` dep array is exactly what we want — the probe does not re-run
-  // for every internal navigation (which previously caused race conditions
-  // with the page-level data fetches).
+  // Probe /me exactly once per page load to populate the user chip in
+  // the chrome (and to bounce the visitor to /login on 401). We do NOT
+  // gate the layout render on the result — the layout renders immediately
+  // and the user avatar/name briefly fall back to placeholders. This
+  // avoids the dev-only "stuck on Checking session…" race that React
+  // StrictMode created with the previous setTimeout-based approach.
   useEffect(() => {
-    if (authProbed.current) return;
-    authProbed.current = true;
+    if (userProbed.current) return;
+    userProbed.current = true;
     let cancelled = false;
-
-    // Safety net: under React StrictMode (dev) the effect runs twice
-    // (mount → cleanup → mount). The ref guard makes the second invocation
-    // a no-op, but the *first* fetch is also cancelled by the cleanup —
-    // so the .finally() never sees `cancelled === false` and authChecked
-    // would stay false forever, stranding the UI on the spinner.
-    // A timeout guarantees the gate always unblocks within 5s.
-    const unblock = setTimeout(() => {
-      if (!cancelled) setAuthChecked(true);
-    }, 5000);
-
     fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
       credentials: 'include',
     })
@@ -82,19 +71,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {
-        // Network failure — keep user null; children will be rendered with
-        // a loading state. Subsequent API calls will surface errors normally.
-      })
-      .finally(() => {
-        clearTimeout(unblock);
-        if (!cancelled) setAuthChecked(true);
+        // Network failure — keep user as null; the chip falls back to
+        // the placeholder. Page-level data fetches will surface their own
+        // errors via the axios interceptor.
       });
     return () => {
       cancelled = true;
-      clearTimeout(unblock);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname, dispatch, router]);
 
   const handleLogout = async () => {
     try {
@@ -125,22 +109,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       },
     ],
   };
-
-  if (!authChecked) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#f5f7fa',
-        }}
-      >
-        <Spin size="large" tip="Checking session…" />
-      </div>
-    );
-  }
 
   // Find the best matching menu key (handles nested paths)
   const selectedKey =
@@ -225,10 +193,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </Tooltip>
             <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
               <Space style={{ cursor: 'pointer' }}>
-                <Avatar style={{ background: '#1677ff' }}>
-                  {user?.name?.[0]?.toUpperCase() ?? 'A'}
+                <Avatar style={{ background: user ? '#1677ff' : '#d9d9d9' }}>
+                  {user ? user.name[0]?.toUpperCase() : <UserOutlined />}
                 </Avatar>
-                <Text strong>{user?.name ?? 'User'}</Text>
+                <Text strong>{user?.name ?? <Spin size="small" />}</Text>
               </Space>
             </Dropdown>
           </Space>
