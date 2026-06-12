@@ -33,7 +33,7 @@ function extractErrorMessage(err: unknown): string {
 
 function* handleList(action: ReturnType<typeof listRequest>): Generator {
   const LIST_RETRIES = 1;
-  const LIST_RETRY_DELAY_MS = 1000;
+  const LIST_RETRY_DELAY_MS = 2000;
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= LIST_RETRIES; attempt++) {
@@ -64,7 +64,7 @@ function* handleList(action: ReturnType<typeof listRequest>): Generator {
 
 function* handleGet(action: ReturnType<typeof getRequest>): Generator {
   const CUSTOMER_GET_RETRIES = 1;
-  const CUSTOMER_GET_RETRY_DELAY_MS = 1000;
+  const CUSTOMER_GET_RETRY_DELAY_MS = 2000;
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= CUSTOMER_GET_RETRIES; attempt++) {

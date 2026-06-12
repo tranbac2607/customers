@@ -36,7 +36,7 @@ import { resetCurrent, deleteRequest, getRequest } from '@/store/customers/custo
 import { IDENTITY_DOCUMENT_LABELS, GENDER_LABELS } from '@/store/customers/customerTypes';
 
 const { Title, Text } = Typography;
-const AUTO_RETRY_DELAY_MS = 1200;
+const AUTO_RETRY_DELAY_MS = 1500;
 const MAX_AUTO_RETRIES = 2;
 
 export function CustomerDetailContent() {
@@ -50,7 +50,6 @@ export function CustomerDetailContent() {
     lastDeletedId,
   } = useAppSelector((s) => s.customers.mutation);
 
-  const fetchInitiated = useRef(false);
   const retryCount = useRef(0);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track deletion in-flight using Redux state, not a ref
@@ -61,20 +60,21 @@ export function CustomerDetailContent() {
     if (id) dispatch(getRequest(id));
   }, [id, dispatch]);
 
+  // Only run effect when id is available — prevents dispatching getRequest(undefined)
   useEffect(() => {
-    fetchInitiated.current = true;
+    if (!id) return;
+
     retryCount.current = 0;
     doFetch();
     return () => {
       dispatch(resetCurrent());
-      fetchInitiated.current = false;
       if (retryTimer.current) clearTimeout(retryTimer.current);
     };
   }, [id, dispatch, doFetch]);
 
   // Auto-retry if first fetch fails
   useEffect(() => {
-    if (!fetchInitiated.current) return;
+    if (!id) return;
     if (loading || item || !error) return;
 
     if (retryCount.current < MAX_AUTO_RETRIES) {
@@ -83,7 +83,7 @@ export function CustomerDetailContent() {
         doFetch();
       }, AUTO_RETRY_DELAY_MS);
     }
-  }, [loading, item, error, doFetch]);
+  }, [loading, item, error, doFetch, id]);
 
   const handleDelete = () => {
     dispatch(deleteRequest(id!));
@@ -104,10 +104,6 @@ export function CustomerDetailContent() {
       toast.error(mutationError);
     }
   }, [mutationError]);
-
-  if (!fetchInitiated.current) {
-    return <Skeleton active paragraph={{ rows: 10 }} />;
-  }
 
   if (loading && !item) {
     return <Skeleton active paragraph={{ rows: 10 }} />;

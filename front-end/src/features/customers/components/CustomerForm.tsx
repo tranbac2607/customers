@@ -528,7 +528,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                       )}
                     />
                   </Col>
-                  <Col xs={24} sm={20}>
+                  <Col xs={24} sm={20} style={{ marginTop: 8 }}>
                     <Controller
                       control={control}
                       name={`identityDocuments.${i}.issuePlace`}

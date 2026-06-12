@@ -19,7 +19,7 @@ const CustomerForm = dynamic(
   { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
 );
 
-const AUTO_RETRY_DELAY_MS = 1200;
+const AUTO_RETRY_DELAY_MS = 1500;
 const MAX_AUTO_RETRIES = 2;
 
 export function EditCustomerContent() {
@@ -31,41 +31,38 @@ export function EditCustomerContent() {
     (s) => s.customers.mutation,
   );
 
-  const fetchInitiated = useRef(false);
   const retryCount = useRef(0);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const doFetch = useCallback(
-    (attempt = 0) => {
-      if (!id) return;
-      dispatch(getRequest(id));
-    },
-    [id, dispatch],
-  );
+  const doFetch = useCallback(() => {
+    if (!id) return;
+    dispatch(getRequest(id));
+  }, [id, dispatch]);
 
+  // Only run effect when id is available — prevents dispatching getRequest(undefined)
   useEffect(() => {
-    fetchInitiated.current = true;
+    if (!id) return;
+
     retryCount.current = 0;
-    doFetch(0);
+    doFetch();
     return () => {
       dispatch(resetCurrent());
-      fetchInitiated.current = false;
       if (retryTimer.current) clearTimeout(retryTimer.current);
     };
   }, [id, dispatch, doFetch]);
 
   // Auto-retry if first fetch fails
   useEffect(() => {
-    if (!fetchInitiated.current) return;
+    if (!id) return;
     if (getLoading || item || !getError) return;
 
     if (retryCount.current < MAX_AUTO_RETRIES) {
       retryCount.current += 1;
       retryTimer.current = setTimeout(() => {
-        doFetch(retryCount.current);
+        doFetch();
       }, AUTO_RETRY_DELAY_MS);
     }
-  }, [getLoading, item, getError, doFetch]);
+  }, [getLoading, item, getError, doFetch, id]);
 
   // Detect transition: updateLoading true -> false = dispatch finished
   const prevUpdateLoading = useRef(false);
@@ -79,7 +76,8 @@ export function EditCustomerContent() {
     prevUpdateLoading.current = updateLoading;
   }, [updateLoading, updateError, router]);
 
-  if (!fetchInitiated.current) {
+  // Wait for id to be resolved before showing anything
+  if (!id) {
     return <Skeleton active paragraph={{ rows: 8 }} />;
   }
 
@@ -98,7 +96,7 @@ export function EditCustomerContent() {
             <Button
               onClick={() => {
                 retryCount.current = 0;
-                doFetch(0);
+                doFetch();
               }}
             >
               Try again
