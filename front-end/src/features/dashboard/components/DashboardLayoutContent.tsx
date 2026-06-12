@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Layout,
   Menu,
@@ -22,13 +22,15 @@ import {
   CloseOutlined,
   HomeOutlined,
 } from '@ant-design/icons';
+import { AxiosError } from 'axios';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { hydrateUser, logout } from '@/store/auth/authSlice';
 import { api } from '@/lib/axios';
-import { env } from '@/lib/env';
+import type { ApiFailure, ApiResponse } from '@/types/api';
+import type { UserResponse } from '@/store/auth/authTypes';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -100,7 +102,6 @@ function SiderContent({
 export function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const userProbed = useRef(false);
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const pathname = usePathname();
@@ -117,34 +118,42 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    if (userProbed.current) return;
-    userProbed.current = true;
+    // If login already populated Redux (e.g. fresh login, then routed
+    // here), there's nothing to probe — the httpOnly cookie is already
+    // valid by definition because login succeeded. Skip the network
+    // round-trip entirely.
+    if (user) return;
+
     let cancelled = false;
-    fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
-      credentials: 'include',
-    })
-      .then(async (res) => {
+    api
+      .get<ApiResponse<{ user: UserResponse }>>('/auth/me')
+      .then((res) => {
         if (cancelled) return;
-        if (res.status === 401) {
-          const next = encodeURIComponent(pathname || '/');
-          router.replace(`/login?next=${next}`);
-          return;
-        }
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.success && data.data?.user) {
-          dispatch(hydrateUser(data.data.user));
+        const body = res.data;
+        if (body?.success && body.data && 'user' in body.data && body.data.user) {
+          dispatch(hydrateUser(body.data.user));
+        } else {
+          dispatch(hydrateUser(null));
         }
       })
-      .catch(() => {
-        // Network failure — keep user as null; the chip falls back to
-        // the placeholder. Page-level data fetches will surface their own
-        // errors via the axios interceptor.
+      .catch((err: AxiosError<ApiFailure>) => {
+        if (cancelled) return;
+        dispatch(hydrateUser(null));
+        // /me is excluded from the auto-refresh path in lib/axios.ts
+        // (any /auth/* URL is), so a 401 here means the session is
+        // genuinely gone — redirect to login.
+        if (err.response?.status === 401) {
+          const next = encodeURIComponent(pathname || '/');
+          router.replace(`/login?next=${next}`);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [pathname, dispatch, router]);
+    // Empty deps: this is a mount-once probe. `pathname` is only used
+    // to build the ?next= redirect URL, not to retrigger the fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = async () => {
     try {
