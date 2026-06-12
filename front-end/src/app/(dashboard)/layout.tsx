@@ -54,6 +54,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (authProbed.current) return;
     authProbed.current = true;
     let cancelled = false;
+
+    // Safety net: under React StrictMode (dev) the effect runs twice
+    // (mount → cleanup → mount). The ref guard makes the second invocation
+    // a no-op, but the *first* fetch is also cancelled by the cleanup —
+    // so the .finally() never sees `cancelled === false` and authChecked
+    // would stay false forever, stranding the UI on the spinner.
+    // A timeout guarantees the gate always unblocks within 5s.
+    const unblock = setTimeout(() => {
+      if (!cancelled) setAuthChecked(true);
+    }, 5000);
+
     fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
       credentials: 'include',
     })
@@ -75,10 +86,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         // a loading state. Subsequent API calls will surface errors normally.
       })
       .finally(() => {
+        clearTimeout(unblock);
         if (!cancelled) setAuthChecked(true);
       });
     return () => {
       cancelled = true;
+      clearTimeout(unblock);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
