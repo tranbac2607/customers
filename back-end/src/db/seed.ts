@@ -35,8 +35,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Software Engineer',
     identityDocuments: [
-      { type: 'CCCD', number: '079090012345', issueDate: '2020-06-15', issuePlace: 'HCMC Public Security' },
-      { type: 'DRIVER_LICENSE', number: 'B2-123456', issueDate: '2018-03-22', issuePlace: 'HCMC Dept. of Transport' },
+      {
+        type: 'CCCD',
+        number: '079090012345',
+        issueDate: '2020-06-15',
+        issuePlace: 'HCMC Public Security',
+      },
+      {
+        type: 'DRIVER_LICENSE',
+        number: 'B2-123456',
+        issueDate: '2018-03-22',
+        issuePlace: 'HCMC Dept. of Transport',
+      },
     ],
   },
   {
@@ -49,7 +59,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Marketing Manager',
     identityDocuments: [
-      { type: 'CCCD', number: '001095123456', issueDate: '2019-08-10', issuePlace: 'Hanoi Public Security' },
+      {
+        type: 'CCCD',
+        number: '001095123456',
+        issueDate: '2019-08-10',
+        issuePlace: 'Hanoi Public Security',
+      },
     ],
   },
   {
@@ -62,8 +77,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Architect',
     identityDocuments: [
-      { type: 'PASSPORT', number: 'B1234567', issueDate: '2021-11-05', issuePlace: 'Vietnam Immigration' },
-      { type: 'CCCD', number: '048088998877', issueDate: '2017-04-20', issuePlace: 'Da Nang Public Security' },
+      {
+        type: 'PASSPORT',
+        number: 'B1234567',
+        issueDate: '2021-11-05',
+        issuePlace: 'Vietnam Immigration',
+      },
+      {
+        type: 'CCCD',
+        number: '048088998877',
+        issueDate: '2017-04-20',
+        issuePlace: 'Da Nang Public Security',
+      },
     ],
   },
   {
@@ -76,7 +101,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Doctor',
     identityDocuments: [
-      { type: 'CCCD', number: '079192556677', issueDate: '2018-09-12', issuePlace: 'HCMC Public Security' },
+      {
+        type: 'CCCD',
+        number: '079192556677',
+        issueDate: '2018-09-12',
+        issuePlace: 'HCMC Public Security',
+      },
     ],
   },
   {
@@ -89,8 +119,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'American',
     occupation: 'Financial Analyst',
     identityDocuments: [
-      { type: 'PASSPORT', number: 'US1234567', issueDate: '2019-01-20', issuePlace: 'U.S. Dept. of State' },
-      { type: 'DRIVER_LICENSE', number: 'NY-998877', issueDate: '2016-05-15', issuePlace: 'New York DMV' },
+      {
+        type: 'PASSPORT',
+        number: 'US1234567',
+        issueDate: '2019-01-20',
+        issuePlace: 'U.S. Dept. of State',
+      },
+      {
+        type: 'DRIVER_LICENSE',
+        number: 'NY-998877',
+        issueDate: '2016-05-15',
+        issuePlace: 'New York DMV',
+      },
     ],
   },
   {
@@ -116,8 +156,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Student',
     identityDocuments: [
-      { type: 'CCCD', number: '001200334455', issueDate: '2021-10-08', issuePlace: 'Hanoi Public Security' },
-      { type: 'PASSPORT', number: 'C7654321', issueDate: '2023-02-14', issuePlace: 'Vietnam Immigration' },
+      {
+        type: 'CCCD',
+        number: '001200334455',
+        issueDate: '2021-10-08',
+        issuePlace: 'Hanoi Public Security',
+      },
+      {
+        type: 'PASSPORT',
+        number: 'C7654321',
+        issueDate: '2023-02-14',
+        issuePlace: 'Vietnam Immigration',
+      },
     ],
   },
   {
@@ -130,8 +180,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Accountant',
     identityDocuments: [
-      { type: 'CCCD', number: '079187667788', issueDate: '2016-12-01', issuePlace: 'HCMC Public Security' },
-      { type: 'DRIVER_LICENSE', number: 'C-789012', issueDate: '2020-05-30', issuePlace: 'HCMC Dept. of Transport' },
+      {
+        type: 'CCCD',
+        number: '079187667788',
+        issueDate: '2016-12-01',
+        issuePlace: 'HCMC Public Security',
+      },
+      {
+        type: 'DRIVER_LICENSE',
+        number: 'C-789012',
+        issueDate: '2020-05-30',
+        issuePlace: 'HCMC Dept. of Transport',
+      },
     ],
   },
   {
@@ -144,7 +204,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Civil Engineer',
     identityDocuments: [
-      { type: 'CCCD', number: '031091778899', issueDate: '2019-06-25', issuePlace: 'Hai Phong Public Security' },
+      {
+        type: 'CCCD',
+        number: '031091778899',
+        issueDate: '2019-06-25',
+        issuePlace: 'Hai Phong Public Security',
+      },
     ],
   },
   {
@@ -157,8 +222,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Teacher',
     identityDocuments: [
-      { type: 'CCCD', number: '096196889900', issueDate: '2020-03-17', issuePlace: 'Can Tho Public Security' },
-      { type: 'PASSPORT', number: 'B5566778', issueDate: '2022-08-22', issuePlace: 'Vietnam Immigration' },
+      {
+        type: 'CCCD',
+        number: '096196889900',
+        issueDate: '2020-03-17',
+        issuePlace: 'Can Tho Public Security',
+      },
+      {
+        type: 'PASSPORT',
+        number: 'B5566778',
+        issueDate: '2022-08-22',
+        issuePlace: 'Vietnam Immigration',
+      },
     ],
   },
   {
@@ -171,8 +246,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Canadian',
     occupation: 'Product Manager',
     identityDocuments: [
-      { type: 'DRIVER_LICENSE', number: 'ON-223344', issueDate: '2017-09-09', issuePlace: 'Ontario MTO' },
-      { type: 'PASSPORT', number: 'CA4455667', issueDate: '2020-12-12', issuePlace: 'Canada Immigration' },
+      {
+        type: 'DRIVER_LICENSE',
+        number: 'ON-223344',
+        issueDate: '2017-09-09',
+        issuePlace: 'Ontario MTO',
+      },
+      {
+        type: 'PASSPORT',
+        number: 'CA4455667',
+        issueDate: '2020-12-12',
+        issuePlace: 'Canada Immigration',
+      },
     ],
   },
   {
@@ -185,7 +270,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Hotel Manager',
     identityDocuments: [
-      { type: 'CCCD', number: '068084112233', issueDate: '2015-04-04', issuePlace: 'Lam Dong Public Security' },
+      {
+        type: 'CCCD',
+        number: '068084112233',
+        issueDate: '2015-04-04',
+        issuePlace: 'Lam Dong Public Security',
+      },
     ],
   },
   {
@@ -198,7 +288,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'French',
     occupation: 'Chef',
     identityDocuments: [
-      { type: 'PASSPORT', number: 'FR2233445', issueDate: '2021-05-20', issuePlace: 'French Govt.' },
+      {
+        type: 'PASSPORT',
+        number: 'FR2233445',
+        issueDate: '2021-05-20',
+        issuePlace: 'French Govt.',
+      },
     ],
   },
   {
@@ -211,8 +306,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Tour Guide',
     identityDocuments: [
-      { type: 'CCCD', number: '056093334455', issueDate: '2018-11-11', issuePlace: 'Khanh Hoa Public Security' },
-      { type: 'DRIVER_LICENSE', number: 'D-556677', issueDate: '2019-02-19', issuePlace: 'Khanh Hoa Dept. of Transport' },
+      {
+        type: 'CCCD',
+        number: '056093334455',
+        issueDate: '2018-11-11',
+        issuePlace: 'Khanh Hoa Public Security',
+      },
+      {
+        type: 'DRIVER_LICENSE',
+        number: 'D-556677',
+        issueDate: '2019-02-19',
+        issuePlace: 'Khanh Hoa Dept. of Transport',
+      },
     ],
   },
   {
@@ -225,7 +330,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Graphic Designer',
     identityDocuments: [
-      { type: 'CCCD', number: '046197445566', issueDate: '2020-07-30', issuePlace: 'Thua Thien Hue Public Security' },
+      {
+        type: 'CCCD',
+        number: '046197445566',
+        issueDate: '2020-07-30',
+        issuePlace: 'Thua Thien Hue Public Security',
+      },
     ],
   },
   {
@@ -238,8 +348,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'German',
     occupation: 'Researcher',
     identityDocuments: [
-      { type: 'PASSPORT', number: 'DE9988776', issueDate: '2019-08-25', issuePlace: 'Germany Govt.' },
-      { type: 'DRIVER_LICENSE', number: 'DE-DL-112233', issueDate: '2016-03-14', issuePlace: 'Berlin LEA' },
+      {
+        type: 'PASSPORT',
+        number: 'DE9988776',
+        issueDate: '2019-08-25',
+        issuePlace: 'Germany Govt.',
+      },
+      {
+        type: 'DRIVER_LICENSE',
+        number: 'DE-DL-112233',
+        issueDate: '2016-03-14',
+        issuePlace: 'Berlin LEA',
+      },
     ],
   },
   {
@@ -252,8 +372,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Banker',
     identityDocuments: [
-      { type: 'CCCD', number: '079086556677', issueDate: '2015-09-09', issuePlace: 'HCMC Public Security' },
-      { type: 'PASSPORT', number: 'B3344556', issueDate: '2021-12-04', issuePlace: 'Vietnam Immigration' },
+      {
+        type: 'CCCD',
+        number: '079086556677',
+        issueDate: '2015-09-09',
+        issuePlace: 'HCMC Public Security',
+      },
+      {
+        type: 'PASSPORT',
+        number: 'B3344556',
+        issueDate: '2021-12-04',
+        issuePlace: 'Vietnam Immigration',
+      },
     ],
   },
   {
@@ -266,7 +396,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Spanish',
     occupation: 'Journalist',
     identityDocuments: [
-      { type: 'PASSPORT', number: 'ES6677889', issueDate: '2018-06-06', issuePlace: 'Spanish Govt.' },
+      {
+        type: 'PASSPORT',
+        number: 'ES6677889',
+        issueDate: '2018-06-06',
+        issuePlace: 'Spanish Govt.',
+      },
     ],
   },
   {
@@ -279,7 +414,12 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Freelancer',
     identityDocuments: [
-      { type: 'CCCD', number: '075199667788', issueDate: '2021-05-05', issuePlace: 'Dong Nai Public Security' },
+      {
+        type: 'CCCD',
+        number: '075199667788',
+        issueDate: '2021-05-05',
+        issuePlace: 'Dong Nai Public Security',
+      },
     ],
   },
   {
@@ -292,8 +432,18 @@ const SAMPLE_CUSTOMERS: Array<{
     nationality: 'Vietnamese',
     occupation: 'Pharmacist',
     identityDocuments: [
-      { type: 'CCCD', number: '079191778899', issueDate: '2016-08-08', issuePlace: 'HCMC Public Security' },
-      { type: 'DRIVER_LICENSE', number: 'A2-998877', issueDate: '2017-11-29', issuePlace: 'HCMC Dept. of Transport' },
+      {
+        type: 'CCCD',
+        number: '079191778899',
+        issueDate: '2016-08-08',
+        issuePlace: 'HCMC Public Security',
+      },
+      {
+        type: 'DRIVER_LICENSE',
+        number: 'A2-998877',
+        issueDate: '2017-11-29',
+        issuePlace: 'HCMC Dept. of Transport',
+      },
     ],
   },
 ];
@@ -326,7 +476,7 @@ export const seed = async (): Promise<void> => {
     let updatedCount = 0;
 
     for (const c of SAMPLE_CUSTOMERS) {
-      const existing = await Customer.findOne({ email: c.email });
+      const existing = await Customer.findOne({ email: c.email, isDeleted: false });
       const docs = c.identityDocuments.map((d) => ({
         type: d.type,
         number: d.number,
@@ -372,3 +522,9 @@ export const seed = async (): Promise<void> => {
     await disconnectDB().catch(() => undefined);
   }
 };
+
+// Run seed when executed directly
+seed().catch((err) => {
+  console.error('Seed failed:', err);
+  process.exit(1);
+});
