@@ -598,9 +598,20 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                     sm={2}
                     style={{ textAlign: 'right', alignSelf: 'flex-end', paddingTop: 30 }}
                   >
-                    <Button danger type="text" icon={<DeleteOutlined />} onClick={() => remove(i)}>
-                      Remove
-                    </Button>
+                    {/* Icon-only with a Tooltip. The previous 'Remove'
+                        text label was ~90px wide and overflowed the
+                        sm={2} column at typical laptop widths, pushing
+                        the button past the card's right edge. The
+                        icon alone is 32px and always fits. */}
+                    <Tooltip title="Remove this document">
+                      <Button
+                        danger
+                        type="text"
+                        icon={<DeleteOutlined />}
+                        onClick={() => remove(i)}
+                        aria-label="Remove this document"
+                      />
+                    </Tooltip>
                   </Col>
                 </Row>
               </div>
