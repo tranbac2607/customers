@@ -14,14 +14,21 @@ export const api = axios.create({
 });
 
 // Set via Providers on mount to wire up auto-refresh side-effects.
-let onUnauthorized: () => void = () => {};
+let onUnauthorized: (expired?: boolean) => void = () => {};
 
-export const bindAxiosAuth = (deps: { onUnauthorized: () => void }) => {
+export const bindAxiosAuth = (deps: { onUnauthorized: (expired?: boolean) => void }) => {
   onUnauthorized = deps.onUnauthorized;
 };
 
 let isRefreshing = false;
+let refreshFailureCount = 0;
+const MAX_REFRESH_RETRIES = 1; // Allow one retry before forcing logout
 let pendingQueue: Array<(token: string | null) => void> = [];
+
+// Debounce logout calls to prevent multiple rapid logouts from race conditions
+// when multiple API calls all get 401 simultaneously.
+let logoutTimer: ReturnType<typeof setTimeout> | null = null;
+const LOGOUT_DEBOUNCE_MS = 100;
 
 const flushQueue = (token: string | null) => {
   pendingQueue.forEach((cb) => cb(token));
@@ -58,7 +65,7 @@ api.interceptors.response.use(
     // Auto-refresh on 401 (except for /auth/* and refresh itself)
     if (status === 401 && !url.includes('/auth/') && original && !original._retry) {
       if (isRefreshing) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           pendingQueue.push((_token) => {
             // Cookies are sent automatically on retry
             resolve(api(original));
@@ -68,34 +75,62 @@ api.interceptors.response.use(
       }
       original._retry = true;
       isRefreshing = true;
+      refreshFailureCount = 0;
 
       try {
         // The browser sends the httpOnly refresh_token cookie automatically.
-        await axios.post(
-          `${env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
-        flushQueue('ok');
-        return api(original);
+        // Retry up to MAX_REFRESH_RETRIES times before giving up.
+        let lastError: unknown;
+        for (let attempt = 0; attempt <= MAX_REFRESH_RETRIES; attempt++) {
+          try {
+            await axios.post(
+              `${env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`,
+              {},
+              { withCredentials: true },
+            );
+            refreshFailureCount = 0;
+            flushQueue('ok');
+            return api(original);
+          } catch (e) {
+            lastError = e;
+            refreshFailureCount = attempt + 1;
+            // If this was not the last attempt, retry immediately
+            if (attempt < MAX_REFRESH_RETRIES) {
+              await new Promise((r) => setTimeout(r, 500)); // brief pause before retry
+            }
+          }
+        }
+        // All retries exhausted
+        flushQueue(null);
+        // Debounce logout to prevent multiple calls from race-condition 401s
+        if (!logoutTimer) {
+          logoutTimer = setTimeout(() => {
+            logoutTimer = null;
+            onUnauthorized(true); // expired=true signals session expiry
+          }, LOGOUT_DEBOUNCE_MS);
+        }
+        return Promise.reject(lastError);
       } catch {
         flushQueue(null);
-        onUnauthorized();
+        if (!logoutTimer) {
+          logoutTimer = setTimeout(() => {
+            logoutTimer = null;
+            onUnauthorized(true);
+          }, LOGOUT_DEBOUNCE_MS);
+        }
         return Promise.reject(err);
       } finally {
         isRefreshing = false;
       }
     }
 
-    // 4xx / 5xx toast
-    const msg = err.response?.data?.error?.message ?? err.message ?? 'Request failed';
-    if (status === 401) {
-      onUnauthorized();
-    } else if (status && status >= 500) {
-      toast.error('Server error. Please try again.');
-    } else if (msg) {
-      toast.warning(msg);
-    }
+    // Note: we deliberately do NOT show a toast here. The calling code
+    // (saga catch → reducer → page useEffect) is responsible for
+    // surfacing the error to the user. Without this, every errored API
+    // call produced TWO toasts: one from the interceptor and one from
+    // the page. The auto-refresh path above also calls onUnauthorized
+    // when the refresh itself fails, so the user is still redirected
+    // when their session dies.
     return Promise.reject(err);
   },
 );

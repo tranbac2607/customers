@@ -81,6 +81,13 @@ const slice = createSlice({
       state.current.loading = false;
       state.current.error = action.payload;
     },
+    resetCurrent(state) {
+      // Reset all fields to prevent stale state from previous page/view
+      state.current.item = null;
+      state.current.loading = false;
+      state.current.error = null;
+    },
+    /** Legacy alias — prefer resetCurrent */
     clearCurrent(state) {
       state.current.item = null;
       state.current.error = null;
@@ -146,6 +153,7 @@ export const {
   getRequest,
   getSuccess,
   getFailure,
+  resetCurrent,
   clearCurrent,
   createRequest,
   createSuccess,

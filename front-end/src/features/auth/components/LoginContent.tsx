@@ -1,19 +1,39 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Card, Form, Input, Button, Typography, Space, Divider } from 'antd';
+import { Card, Form, Input, Button, Typography, Space, Divider, Alert } from 'antd';
 import { LockOutlined, MailOutlined, LoginOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { loginRequest } from '@/store/auth/authSlice';
+import { loginRequest, type LoginErrorCode } from '@/store/auth/authSlice';
 
 const { Title, Paragraph, Text } = Typography;
+const SAVED_EMAIL_KEY = 'saved_email';
 
 interface LoginValues {
   email: string;
   password: string;
+}
+
+// Map the saga's error code to a user-facing message. Wrong credentials
+// get a specific message; everything else (5xx, CORS, network failure)
+// gets a generic server-error message so the user isn't told their
+// password is wrong when the actual problem is the backend being down.
+function errorMessageFor(code: LoginErrorCode | null): string | null {
+  switch (code) {
+    case 'INVALID_CREDENTIALS':
+      return 'Invalid email or password';
+    case 'SERVER_ERROR':
+      return 'Server error. Please try again later.';
+    case 'NETWORK_ERROR':
+      return 'Network error. Please check your connection.';
+    case 'UNKNOWN':
+      return 'Something went wrong. Please try again.';
+    default:
+      return null;
+  }
 }
 
 /**
@@ -25,14 +45,44 @@ export function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const { loading, error, isAuthenticated, user } = useAppSelector((s) => s.auth);
+  const { loading, error, errorCode, isAuthenticated, user } = useAppSelector((s) => s.auth);
+
+  // Restore saved email so user doesn't have to re-type after session expiry
+  const [savedEmail, setSavedEmail] = useState('');
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_EMAIL_KEY);
+      if (saved) setSavedEmail(saved);
+    } catch {
+      // localStorage may be unavailable in some environments
+    }
+  }, []);
 
   // Track previous auth state to fire success toast exactly once
   const wasAuthenticated = useRef(isAuthenticated);
-  const lastError = useRef<string | null>(null);
+  // Initialise with the current errorCode so React.StrictMode's
+  // mount/unmount/remount cycle in dev doesn't fire the same toast twice
+  // (the ref is preserved across remounts, so the equality check holds).
+  const lastErrorCode = useRef<LoginErrorCode | null>(errorCode);
+  // Track if this is a re-login after session expiry (query param ?expired=1)
+  const [sessionExpired, setSessionExpired] = useState(false);
+  useEffect(() => {
+    if (searchParams.get('expired') === '1') {
+      setSessionExpired(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (isAuthenticated && !wasAuthenticated.current) {
+      // Save email on successful login for re-auth later
+      const email = (document.querySelector('input[name="email"]') as HTMLInputElement)?.value;
+      if (email) {
+        try {
+          localStorage.setItem(SAVED_EMAIL_KEY, email);
+        } catch {
+          // ignore
+        }
+      }
       toast.success(`Welcome back${user?.name ? `, ${user.name}` : ''}!`);
       const next = searchParams.get('next') || '/customers';
       router.replace(next);
@@ -41,14 +91,16 @@ export function LoginContent() {
   }, [isAuthenticated, user, router, searchParams]);
 
   useEffect(() => {
-    if (error && error !== lastError.current) {
-      toast.error('Invalid email or password');
-      lastError.current = error;
+    if (errorCode && errorCode !== lastErrorCode.current) {
+      const msg = errorMessageFor(errorCode);
+      if (msg) toast.error(msg);
+      lastErrorCode.current = errorCode;
     }
-  }, [error]);
+  }, [errorCode]);
 
   const onFinish = (values: LoginValues) => {
-    lastError.current = null;
+    // The reducer clears error + errorCode on loginRequest, so no manual
+    // reset needed here.
     dispatch(loginRequest(values));
   };
 
@@ -84,6 +136,17 @@ export function LoginContent() {
           </Paragraph>
         </div>
 
+        {sessionExpired && (
+          <Alert
+            type="warning"
+            message="Session expired"
+            description="Your session has expired. Please sign in again."
+            showIcon
+            closable
+            onClose={() => setSessionExpired(false)}
+          />
+        )}
+
         <Form
           layout="vertical"
           size="large"
@@ -91,7 +154,7 @@ export function LoginContent() {
           autoComplete="off"
           disabled={loading}
           requiredMark={false}
-          initialValues={{ email: '', password: '' }}
+          initialValues={{ email: savedEmail, password: '' }}
         >
           <Form.Item
             label="Email"
@@ -101,7 +164,7 @@ export function LoginContent() {
               { type: 'email', message: 'Please enter a valid email' },
             ]}
           >
-            <Input prefix={<MailOutlined />} placeholder="admin@example.com" />
+            <Input prefix={<MailOutlined />} placeholder="admin@example.com" autoComplete="email" />
           </Form.Item>
 
           <Form.Item
@@ -112,7 +175,11 @@ export function LoginContent() {
               { min: 6, message: 'Password must be at least 6 characters' },
             ]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="••••••••" />
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0 }}>

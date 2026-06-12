@@ -22,9 +22,10 @@ function AuthBridge({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     bindAxiosAuth({
-      onUnauthorized: () => {
+      onUnauthorized: (expired?: boolean) => {
         dispatch(logout());
-        router.replace('/login');
+        // Pass ?expired=1 so the login page can show a helpful message
+        router.replace(expired ? '/login?expired=1' : '/login');
       },
     });
   }, [dispatch, router]);

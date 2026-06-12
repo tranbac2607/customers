@@ -32,7 +32,7 @@ import {
 import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { clearCurrent, deleteRequest, getRequest } from '@/store/customers/customersSlice';
+import { resetCurrent, deleteRequest, getRequest } from '@/store/customers/customersSlice';
 import { IDENTITY_DOCUMENT_LABELS, GENDER_LABELS } from '@/store/customers/customerTypes';
 
 const { Title, Text } = Typography;
@@ -50,7 +50,7 @@ export function CustomerDetailContent() {
     fetchInitiated.current = true;
     if (id) dispatch(getRequest(id));
     return () => {
-      dispatch(clearCurrent());
+      dispatch(resetCurrent());
       fetchInitiated.current = false;
     };
   }, [id, dispatch]);

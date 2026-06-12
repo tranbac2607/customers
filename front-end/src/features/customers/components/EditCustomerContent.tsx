@@ -8,7 +8,7 @@ import { Card, Typography, Space, Button, Skeleton, Result } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { getRequest, clearCurrent, updateRequest } from '@/store/customers/customersSlice';
+import { getRequest, resetCurrent, updateRequest } from '@/store/customers/customersSlice';
 import type { CustomerFormValues } from '@/features/customers/components/CustomerForm';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -32,7 +32,7 @@ export function EditCustomerContent() {
     fetchInitiated.current = true;
     if (id) dispatch(getRequest(id));
     return () => {
-      dispatch(clearCurrent());
+      dispatch(resetCurrent());
       fetchInitiated.current = false;
     };
   }, [id, dispatch]);
