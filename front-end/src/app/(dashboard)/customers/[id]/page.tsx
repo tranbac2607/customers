@@ -30,10 +30,10 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { clearCurrent, deleteRequest, getRequest } from '@/features/customers/customersSlice';
+import { clearCurrent, deleteRequest, getRequest } from '@/store/customers/customersSlice';
 import { Popconfirm } from 'antd';
 import { toast } from 'react-toastify';
-import { IDENTITY_DOCUMENT_LABELS, GENDER_LABELS } from '@/features/customers/customerTypes';
+import { IDENTITY_DOCUMENT_LABELS, GENDER_LABELS } from '@/store/customers/customerTypes';
 
 const { Title, Text } = Typography;
 

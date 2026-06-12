@@ -1,37 +1,24 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import {
-  Card,
-  Table,
-  Space,
-  Button,
-  Input,
-  Tag,
-  Avatar,
-  Popconfirm,
-  Typography,
-  Select,
-  Tooltip,
-} from 'antd';
-import {
-  PlusOutlined,
-  SearchOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-  ReloadOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { Card, Space, Button, Typography } from 'antd';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { PAGE_SIZE_OPTIONS } from '@/lib/constants';
-import { deleteRequest, listRequest } from '@/features/customers/customersSlice';
-import type { Customer } from '@/features/customers/customerTypes';
-import dayjs from 'dayjs';
+import { deleteRequest, listRequest } from '@/store/customers/customersSlice';
+import type { CustomerListQuery } from '@/store/customers/customerTypes';
+import {
+  CustomerSearch,
+  CustomerList,
+  type CustomerSearchValues,
+} from '@/features/customers/components';
+import { useListQuery } from '@/features/customers/hooks';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
+
+const EMPTY_QUERY: CustomerSearchValues = {};
 
 export default function CustomersPage() {
   const dispatch = useAppDispatch();
@@ -39,29 +26,49 @@ export default function CustomersPage() {
   const mutationLoading = useAppSelector((s) => s.customers.mutation.loading);
   const mutationError = useAppSelector((s) => s.customers.mutation.error);
 
-  const [search, setSearch] = useState(lastQuery.search ?? '');
-  const [page, setPage] = useState(lastQuery.page);
-  const [limit, setLimit] = useState(lastQuery.limit);
-  const [sortBy, setSortBy] = useState(lastQuery.sortBy);
-  const [order, setOrder] = useState(lastQuery.order);
+  // Generic list query state (page / limit / sort). Custom hook so any
+  // future list screen (orders, transactions, …) can reuse it.
+  const { state, setPage, setLimit, setSort, commit } = useListQuery<CustomerSearchValues>(
+    EMPTY_QUERY,
+    { defaultSortBy: lastQuery.sortBy, defaultOrder: lastQuery.order },
+  );
 
-  const fetchList = (overrides: Partial<typeof lastQuery> = {}) => {
-    const q = {
-      page: overrides.page ?? page,
-      limit: overrides.limit ?? limit,
-      search: overrides.search !== undefined ? overrides.search : search || undefined,
-      sortBy: overrides.sortBy ?? sortBy,
-      order: overrides.order ?? order,
+  // Separate react-hook-form instance for the search inputs. Keeping it
+  // out of useListQuery means future list screens can use any form
+  // library (or none) they like.
+  const searchForm = useForm<CustomerSearchValues>({
+    defaultValues: {
+      fullName: lastQuery.fullName,
+      gender: lastQuery.gender,
+      phone: lastQuery.phone,
+    },
+  });
+
+  // Dispatch list query whenever the committed state changes.
+  // The ref guards against the first render in StrictMode.
+  const dispatchedFor = useRef<string | null>(null);
+  useEffect(() => {
+    const key = JSON.stringify(state);
+    if (dispatchedFor.current === key) return;
+    dispatchedFor.current = key;
+    const q: CustomerListQuery = {
+      ...state.query,
+      page: state.page,
+      limit: state.limit,
+      sortBy: state.sortBy as CustomerListQuery['sortBy'],
+      order: state.order,
     };
     dispatch(listRequest(q));
-  };
+  }, [state, dispatch]);
 
+  // Toast on delete failure.
   useEffect(() => {
-    fetchList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (mutationError) {
+      toast.error(mutationError);
+    }
+  }, [mutationError]);
 
-  // Toast on delete success / failure (detect loading transition)
+  // Toast on delete success — detect the loading transition.
   const prevMutationLoading = useRef(false);
   useEffect(() => {
     if (prevMutationLoading.current && !mutationLoading && !mutationError) {
@@ -72,158 +79,19 @@ export default function CustomersPage() {
     prevMutationLoading.current = mutationLoading;
   }, [mutationLoading, mutationError]);
 
-  // Debounced search
-  useEffect(() => {
-    const id = setTimeout(() => {
-      if ((search || '') !== (lastQuery.search || '')) {
-        setPage(1);
-        fetchList({ page: 1, search: search || undefined });
-      }
-    }, 400);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
-
-  const handleTableChange: import('antd').TableProps<Customer>['onChange'] = (
-    paginationConfig,
-    _filters,
-    sorter,
-  ) => {
-    const s = Array.isArray(sorter) ? sorter[0] : sorter;
-    const newPage = paginationConfig.current ?? 1;
-    const newLimit = paginationConfig.pageSize ?? limit;
-    const field = typeof s?.field === 'string' ? s.field : null;
-    const newSortBy = (field as typeof sortBy) ?? sortBy;
-    const newOrder: typeof order = s?.order === 'ascend' ? 'asc' : 'desc';
-    setPage(newPage);
-    setLimit(newLimit);
-    setSortBy(newSortBy);
-    setOrder(newOrder);
-    dispatch(
-      listRequest({
-        page: newPage,
-        limit: newLimit,
-        search: search || undefined,
-        sortBy: newSortBy,
-        order: newOrder,
-      }),
-    );
+  const handleSearch = (values: CustomerSearchValues) => {
+    // Commit the form values into the list-query state, then run commit()
+    // to immediately re-dispatch with the new query.
+    searchForm.reset(values);
+    Object.assign(state.query, values);
+    commit();
   };
 
-  const handleDelete = (id: string) => {
-    dispatch(deleteRequest(id));
+  const handleClear = () => {
+    searchForm.reset(EMPTY_QUERY);
+    Object.keys(state.query).forEach((k) => delete state.query[k as keyof CustomerSearchValues]);
+    commit();
   };
-
-  const columns: import('antd').TableProps<Customer>['columns'] = [
-    {
-      title: 'Customer',
-      key: 'fullName',
-      sorter: true,
-      sortOrder: sortBy === 'fullName' ? (order === 'asc' ? 'ascend' : 'descend') : undefined,
-      render: (_: unknown, record: Customer) => (
-        <Space>
-          <Avatar style={{ background: '#1677ff' }} icon={<UserOutlined />} />
-          <div>
-            <div style={{ fontWeight: 600 }}>{record.fullName}</div>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {record.email}
-            </Text>
-          </div>
-        </Space>
-      ),
-    },
-    {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-      width: 160,
-    },
-    {
-      title: 'Gender',
-      dataIndex: 'gender',
-      key: 'gender',
-      width: 100,
-      render: (g: Customer['gender']) => (
-        <Tag color={g === 'male' ? 'blue' : g === 'female' ? 'magenta' : 'default'}>
-          {g === 'male' ? 'Male' : g === 'female' ? 'Female' : 'Other'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Nationality',
-      dataIndex: 'nationality',
-      key: 'nationality',
-      width: 140,
-    },
-    {
-      title: 'Occupation',
-      dataIndex: 'occupation',
-      key: 'occupation',
-      width: 160,
-    },
-    {
-      title: 'Identity docs',
-      key: 'identityDocuments',
-      width: 140,
-      render: (_: unknown, record: Customer) => {
-        if (!record.identityDocuments?.length) return <Text type="secondary">—</Text>;
-        return (
-          <Space size={4} wrap>
-            {record.identityDocuments.map((d) => (
-              <Tag key={d.id ?? d.type} color="geekblue" style={{ fontSize: 11 }}>
-                {d.type}
-              </Tag>
-            ))}
-          </Space>
-        );
-      },
-    },
-    {
-      title: 'Created',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 140,
-      sorter: true,
-      sortOrder: sortBy === 'createdAt' ? (order === 'asc' ? 'ascend' : 'descend') : undefined,
-      render: (d: string) => (
-        <Tooltip title={dayjs(d).format('YYYY-MM-DD HH:mm:ss')}>
-          {dayjs(d).format('MMM D, YYYY')}
-        </Tooltip>
-      ),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 140,
-      fixed: 'right' as const,
-      render: (_: unknown, record: Customer) => (
-        <Space size="small">
-          <Tooltip title="View">
-            <Link href={`/customers/${record.id}`}>
-              <Button type="text" icon={<EyeOutlined />} />
-            </Link>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <Link href={`/customers/${record.id}/edit`}>
-              <Button type="text" icon={<EditOutlined />} />
-            </Link>
-          </Tooltip>
-          <Popconfirm
-            title="Delete this customer?"
-            description="This action cannot be undone."
-            onConfirm={() => handleDelete(record.id)}
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-          >
-            <Tooltip title="Delete">
-              <Button type="text" danger icon={<DeleteOutlined />} loading={mutationLoading} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
 
   return (
     <div>
@@ -246,7 +114,7 @@ export default function CustomersPage() {
           </Paragraph>
         </div>
         <Space wrap>
-          <Button icon={<ReloadOutlined />} onClick={() => fetchList()}>
+          <Button icon={<ReloadOutlined />} onClick={() => commit()}>
             Refresh
           </Button>
           <Link href="/customers/new">
@@ -257,72 +125,25 @@ export default function CustomersPage() {
         </Space>
       </div>
 
-      <Card styles={{ body: { padding: 0 } }}>
-        <div
-          style={{
-            padding: 16,
-            borderBottom: '1px solid #f0f0f0',
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 12,
-            alignItems: 'center',
-          }}
-        >
-          <Input
-            allowClear
-            prefix={<SearchOutlined />}
-            placeholder="Search by name, email, phone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ minWidth: 240, flex: '1 1 240px', maxWidth: 360 }}
+      <Card styles={{ body: { padding: 16 } }}>
+        <div style={{ marginBottom: 16 }}>
+          <CustomerSearch
+            control={searchForm.control}
+            loading={loading}
+            onSearch={handleSearch}
+            onClear={handleClear}
           />
-          <Space wrap>
-            <Text type="secondary">Sort:</Text>
-            <Select
-              value={`${sortBy}:${order}`}
-              onChange={(v) => {
-                const [s, o] = v.split(':');
-                setSortBy(s as typeof sortBy);
-                setOrder(o as typeof order);
-                setPage(1);
-                dispatch(
-                  listRequest({
-                    page: 1,
-                    limit,
-                    search: search || undefined,
-                    sortBy: s as typeof sortBy,
-                    order: o as typeof order,
-                  }),
-                );
-              }}
-              options={[
-                { value: 'createdAt:desc', label: 'Newest first' },
-                { value: 'createdAt:asc', label: 'Oldest first' },
-                { value: 'fullName:asc', label: 'Name A → Z' },
-                { value: 'fullName:desc', label: 'Name Z → A' },
-                { value: 'dateOfBirth:desc', label: 'Youngest first' },
-                { value: 'dateOfBirth:asc', label: 'Oldest first' },
-              ]}
-              style={{ minWidth: 180 }}
-            />
-          </Space>
         </div>
-        <Table<Customer>
-          rowKey="id"
-          dataSource={items}
-          columns={columns}
+        <CustomerList
+          items={items}
           loading={loading}
-          scroll={{ x: 900 }}
-          onChange={handleTableChange}
-          pagination={{
-            current: page,
-            pageSize: limit,
-            total: pagination.total,
-            showSizeChanger: true,
-            pageSizeOptions: PAGE_SIZE_OPTIONS.map(String),
-            showTotal: (total) => `${total} customer${total !== 1 ? 's' : ''}`,
-          }}
+          pagination={pagination}
+          mutationLoading={mutationLoading}
+          onPageChange={setPage}
+          onDelete={(id) => dispatch(deleteRequest(id))}
+          onSortChange={setSort}
+          currentSortBy={state.sortBy}
+          currentOrder={state.order}
         />
       </Card>
     </div>

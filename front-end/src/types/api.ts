@@ -1,4 +1,4 @@
-import type { UserResponse } from '@/features/auth/authTypes';
+import type { UserResponse } from '@/store/auth/authTypes';
 
 export interface ApiSuccess<T> {
   success: true;

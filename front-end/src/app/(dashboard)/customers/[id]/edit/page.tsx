@@ -8,14 +8,14 @@ import { Card, Typography, Space, Button, Skeleton, Result } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { getRequest, clearCurrent, updateRequest } from '@/features/customers/customersSlice';
-import type { CustomerFormValues } from '@/features/customers/CustomerForm';
+import { getRequest, clearCurrent, updateRequest } from '@/store/customers/customersSlice';
+import type { CustomerFormValues } from '@/features/customers/components/CustomerForm';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Paragraph } = Typography;
 
 const CustomerForm = dynamic(
-  () => import('@/features/customers/CustomerForm').then((m) => m.CustomerForm),
+  () => import('@/features/customers/components/CustomerForm').then((m) => m.CustomerForm),
   { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
 );
 

@@ -2,7 +2,12 @@ import { call, put, takeLatest } from 'redux-saga/effects';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/axios';
 import type { ApiFailure, ApiResponse, Paginated } from '@/types/api';
-import type { Customer, CreateCustomerPayload, CustomerListQuery, UpdateCustomerPayload } from './customerTypes';
+import type {
+  Customer,
+  CreateCustomerPayload,
+  CustomerListQuery,
+  UpdateCustomerPayload,
+} from './customerTypes';
 import {
   createFailure,
   createRequest,

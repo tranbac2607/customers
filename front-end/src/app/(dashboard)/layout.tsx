@@ -27,7 +27,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { hydrateUser, logout } from '@/features/auth/authSlice';
+import { hydrateUser, logout } from '@/store/auth/authSlice';
 import { api } from '@/lib/axios';
 import { env } from '@/lib/env';
 

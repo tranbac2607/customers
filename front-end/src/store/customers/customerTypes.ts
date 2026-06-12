@@ -1,6 +1,6 @@
-import type { Gender, IdentityDocument, IdentityDocumentType } from '@/features/auth/authTypes';
+import type { Gender, IdentityDocument, IdentityDocumentType } from '@/store/auth/authTypes';
 
-export { GENDERS, IDENTITY_DOCUMENT_TYPES } from '@/features/auth/authTypes';
+export { GENDERS, IDENTITY_DOCUMENT_TYPES } from '@/store/auth/authTypes';
 
 export type SortBy = 'createdAt' | 'fullName' | 'dateOfBirth' | 'email';
 export type SortOrder = 'asc' | 'desc';
@@ -8,7 +8,12 @@ export type SortOrder = 'asc' | 'desc';
 export interface CustomerListQuery {
   page: number;
   limit: number;
+  /** Legacy general search — ORs across multiple fields. */
   search?: string;
+  /** Field-specific search terms. These AND together. */
+  fullName?: string;
+  gender?: Gender;
+  phone?: string;
   sortBy: SortBy;
   order: SortOrder;
 }
@@ -46,13 +51,13 @@ export interface Customer extends CreateCustomerPayload {
 }
 
 export const IDENTITY_DOCUMENT_LABELS: Record<IdentityDocumentType, string> = {
-  CCCD: 'Căn cước công dân',
-  DRIVER_LICENSE: 'Giấy phép lái xe',
-  PASSPORT: 'Hộ chiếu',
+  CCCD: 'Citizen ID',
+  DRIVER_LICENSE: 'Driver License',
+  PASSPORT: 'Passport',
 };
 
 export const GENDER_LABELS: Record<Gender, string> = {
-  male: 'Nam',
-  female: 'Nữ',
-  other: 'Khác',
+  male: 'Male',
+  female: 'Female',
+  other: 'Other',
 };

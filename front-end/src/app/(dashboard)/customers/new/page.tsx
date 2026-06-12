@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { createRequest } from '@/features/customers/customersSlice';
-import type { CustomerFormValues } from '@/features/customers/CustomerForm';
+import { createRequest } from '@/store/customers/customersSlice';
+import type { CustomerFormValues } from '@/features/customers/components/CustomerForm';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Paragraph } = Typography;
@@ -17,7 +17,7 @@ const { Title, Paragraph } = Typography;
 // CustomerForm pulls in react-hook-form + zodResolver; its module graph
 // is fragile under Turbopack's prerender pass. Load it client-side only.
 const CustomerForm = dynamic(
-  () => import('@/features/customers/CustomerForm').then((m) => m.CustomerForm),
+  () => import('@/features/customers/components/CustomerForm').then((m) => m.CustomerForm),
   { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
 );
 

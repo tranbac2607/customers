@@ -13,7 +13,7 @@ import { bindAxiosAuth } from '@/lib/axios';
 import { loadingStore } from '@/lib/loadingStore';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout } from '@/features/auth/authSlice';
+import { logout } from '@/store/auth/authSlice';
 
 function AuthBridge({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();

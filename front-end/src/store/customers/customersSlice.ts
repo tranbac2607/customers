@@ -86,7 +86,10 @@ const slice = createSlice({
       state.current.error = null;
     },
     // CREATE
-    createRequest(state, _action: PayloadAction<Omit<Customer, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>>) {
+    createRequest(
+      state,
+      _action: PayloadAction<Omit<Customer, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>>,
+    ) {
       state.mutation.loading = true;
       state.mutation.error = null;
     },
@@ -107,7 +110,9 @@ const slice = createSlice({
     },
     updateSuccess(state, action: PayloadAction<Customer>) {
       state.mutation.loading = false;
-      state.list.items = state.list.items.map((c) => (c.id === action.payload.id ? action.payload : c));
+      state.list.items = state.list.items.map((c) =>
+        c.id === action.payload.id ? action.payload : c,
+      );
       if (state.current.item?.id === action.payload.id) {
         state.current.item = action.payload;
       }

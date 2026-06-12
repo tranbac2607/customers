@@ -19,7 +19,12 @@ const VALID_CUSTOMER = {
   nationality: 'Vietnamese',
   occupation: 'Engineer',
   identityDocuments: [
-    { type: 'CCCD' as const, number: '079090012345', issueDate: '2020-06-15', issuePlace: 'HCMC PS' },
+    {
+      type: 'CCCD' as const,
+      number: '079090012345',
+      issueDate: '2020-06-15',
+      issuePlace: 'HCMC PS',
+    },
   ],
 };
 
@@ -110,6 +115,26 @@ describe('Customers', () => {
   it('GET with search filter', async () => {
     const res = await request(app)
       .get('/api/customers?search=nguyen')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.items.length).toBeGreaterThan(0);
+  });
+
+  it('GET with specific field filters (fullName + gender)', async () => {
+    const res = await request(app)
+      .get('/api/customers?fullName=nguyen&gender=female')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    // The seeded "Nguyen Van An" is male, so filtering by gender=female
+    // combined with the name match must return zero rows.
+    expect(res.body.data.items.length).toBe(0);
+  });
+
+  it('GET with phone filter (digits-only regex match)', async () => {
+    // The seeded admin has phone '+84 901 234 567' (digit substring
+    // '901234567' should match a `phone=901234567` filter).
+    const res = await request(app)
+      .get('/api/customers?phone=901234567')
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.data.items.length).toBeGreaterThan(0);

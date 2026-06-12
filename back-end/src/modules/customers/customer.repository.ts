@@ -64,12 +64,32 @@ export const customerRepository = {
   },
 
   async findMany(query: ListCustomersQuery): Promise<FindManyResult> {
-    const { page, limit, search, sortBy, order } = query;
+    const { page, limit, search, fullName, gender, phone, sortBy, order } = query;
     const filter: FilterQuery<ICustomer> = { isDeleted: false };
 
+    // Specific-field search (preferred). These AND together.
+    if (fullName && fullName.trim()) {
+      const escaped = fullName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.fullName = new RegExp(escaped, 'i');
+    }
+    if (gender) {
+      filter.gender = gender;
+    }
+    if (phone && phone.trim()) {
+      // The stored phone may contain spaces / dashes (e.g. '+84 901 234 567').
+      // Build a regex that allows any non-digit between each query digit so
+      // '901234567' still matches the spaced form.
+      const digitsOnly = phone.trim().replace(/\D/g, '');
+      if (digitsOnly) {
+        const pattern = digitsOnly.split('').join('\\D*');
+        filter.phone = new RegExp(pattern, 'i');
+      }
+    }
+
+    // Legacy general search — kept for backward compat. ORs across
+    // multiple fields. Combined with the specific-field filters via AND.
     if (search && search.trim()) {
       const term = search.trim();
-      // Regex OR across key fields (works well + indexable via text search fallback)
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(escaped, 'i');
       filter.$or = [

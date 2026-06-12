@@ -35,10 +35,10 @@ import {
   GENDER_LABELS,
   IDENTITY_DOCUMENT_TYPES,
   IDENTITY_DOCUMENT_LABELS,
-} from '@/features/customers/customerTypes';
-import { COUNTRIES } from '@/features/customers/countries';
-import type { Customer } from '@/features/customers/customerTypes';
-import type { Gender, IdentityDocumentType } from '@/features/auth/authTypes';
+} from '@/store/customers/customerTypes';
+import { COUNTRIES } from '@/store/customers/countries';
+import type { Customer } from '@/store/customers/customerTypes';
+import type { Gender, IdentityDocumentType } from '@/store/auth/authTypes';
 
 const {} = Typography;
 

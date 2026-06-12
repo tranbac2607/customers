@@ -118,7 +118,7 @@ router.post(
  *       200: { description: New pair of tokens }
  *       401: { description: Invalid / reused refresh token }
  */
-router.post('/refresh', validate(refreshSchema), asyncHandler(authController.refresh));
+router.post('/refresh', asyncHandler(authController.refresh));
 
 /**
  * @openapi

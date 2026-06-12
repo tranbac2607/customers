@@ -86,7 +86,14 @@ describe('customersSlice', () => {
   it('createSuccess prepends to list, increments total', () => {
     const newCustomer = { ...baseCustomer, id: 'c2' };
     const state = reducer(
-      { ...initial, list: { ...initial.list, items: [baseCustomer], pagination: { ...initial.list.pagination, total: 1 } } },
+      {
+        ...initial,
+        list: {
+          ...initial.list,
+          items: [baseCustomer],
+          pagination: { ...initial.list.pagination, total: 1 },
+        },
+      },
       createSuccess(newCustomer),
     );
     expect(state.list.items).toEqual([newCustomer, baseCustomer]);
@@ -96,7 +103,11 @@ describe('customersSlice', () => {
   it('updateSuccess replaces in list + current', () => {
     const updated = { ...baseCustomer, occupation: 'Senior' };
     const state = reducer(
-      { ...initial, list: { ...initial.list, items: [baseCustomer] }, current: { item: baseCustomer, loading: false, error: null } },
+      {
+        ...initial,
+        list: { ...initial.list, items: [baseCustomer] },
+        current: { item: baseCustomer, loading: false, error: null },
+      },
       updateSuccess(updated),
     );
     expect(state.list.items[0].occupation).toBe('Senior');
@@ -105,7 +116,14 @@ describe('customersSlice', () => {
 
   it('deleteSuccess removes from list, decrements total', () => {
     const state = reducer(
-      { ...initial, list: { ...initial.list, items: [baseCustomer], pagination: { ...initial.list.pagination, total: 1 } } },
+      {
+        ...initial,
+        list: {
+          ...initial.list,
+          items: [baseCustomer],
+          pagination: { ...initial.list.pagination, total: 1 },
+        },
+      },
       deleteSuccess('c1'),
     );
     expect(state.list.items).toEqual([]);

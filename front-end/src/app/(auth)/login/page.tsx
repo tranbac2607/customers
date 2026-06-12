@@ -7,7 +7,7 @@ import { Card, Form, Input, Button, Typography, Space, Divider } from 'antd';
 import { LockOutlined, MailOutlined, LoginOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { loginRequest } from '@/features/auth/authSlice';
+import { loginRequest } from '@/store/auth/authSlice';
 
 const { Title, Paragraph, Text } = Typography;
 
