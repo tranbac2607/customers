@@ -32,34 +32,63 @@ function extractErrorMessage(err: unknown): string {
 }
 
 function* handleList(action: ReturnType<typeof listRequest>): Generator {
-  try {
-    const q: CustomerListQuery = action.payload;
-    const res = yield call(() =>
-      api.get<ApiResponse<Paginated<Customer>>>('/customers', { params: q }),
-    );
-    const body = res.data;
-    if (!body.success) {
-      yield put(listFailure(body.error.message));
-      return;
+  const LIST_RETRIES = 1;
+  const LIST_RETRY_DELAY_MS = 600;
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= LIST_RETRIES; attempt++) {
+    try {
+      const q: CustomerListQuery = action.payload;
+      const res = yield call(() =>
+        api.get<ApiResponse<Paginated<Customer>>>('/customers', { params: q }),
+      );
+      const body = res.data;
+      if (!body.success) {
+        yield put(listFailure(body.error.message));
+        return;
+      }
+      yield put(
+        listSuccess({ items: body.data.items, pagination: body.data.pagination, query: q }),
+      );
+      return; // success — exit saga
+    } catch (err) {
+      lastError = err;
+      if (attempt < LIST_RETRIES) {
+        yield call((ms: number) => new Promise((r) => setTimeout(r, ms)), LIST_RETRY_DELAY_MS);
+      }
     }
-    yield put(listSuccess({ items: body.data.items, pagination: body.data.pagination, query: q }));
-  } catch (err) {
-    yield put(listFailure(extractErrorMessage(err)));
   }
+  // All retries exhausted
+  yield put(listFailure(extractErrorMessage(lastError)));
 }
 
 function* handleGet(action: ReturnType<typeof getRequest>): Generator {
-  try {
-    const res = yield call(() => api.get<ApiResponse<Customer>>(`/customers/${action.payload}`));
-    const body = res.data;
-    if (!body.success) {
-      yield put(getFailure(body.error.message));
-      return;
+  const CUSTOMER_GET_RETRIES = 1;
+  const CUSTOMER_GET_RETRY_DELAY_MS = 600;
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= CUSTOMER_GET_RETRIES; attempt++) {
+    try {
+      const res = yield call(() => api.get<ApiResponse<Customer>>(`/customers/${action.payload}`));
+      const body = res.data;
+      if (!body.success) {
+        yield put(getFailure(body.error.message));
+        return;
+      }
+      yield put(getSuccess(body.data));
+      return; // success — exit saga
+    } catch (err) {
+      lastError = err;
+      if (attempt < CUSTOMER_GET_RETRIES) {
+        yield call(
+          (ms: number) => new Promise((r) => setTimeout(r, ms)),
+          CUSTOMER_GET_RETRY_DELAY_MS,
+        );
+      }
     }
-    yield put(getSuccess(body.data));
-  } catch (err) {
-    yield put(getFailure(extractErrorMessage(err)));
   }
+  // All retries exhausted
+  yield put(getFailure(extractErrorMessage(lastError)));
 }
 
 function* handleCreate(action: ReturnType<typeof createRequest>): Generator {
