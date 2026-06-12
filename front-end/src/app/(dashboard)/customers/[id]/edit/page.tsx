@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Typography, Space, Button, Skeleton, Result } from 'antd';
@@ -8,10 +9,15 @@ import { ArrowLeftOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { getRequest, clearCurrent, updateRequest } from '@/features/customers/customersSlice';
-import { CustomerForm, CustomerFormValues } from '@/features/customers/CustomerForm';
+import type { CustomerFormValues } from '@/features/customers/CustomerForm';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Paragraph } = Typography;
+
+const CustomerForm = dynamic(
+  () => import('@/features/customers/CustomerForm').then((m) => m.CustomerForm),
+  { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
+);
 
 export default function EditCustomerPage() {
   const { id } = useParams<{ id: string }>();

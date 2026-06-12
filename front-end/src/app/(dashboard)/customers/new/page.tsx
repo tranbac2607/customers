@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Card, Typography, Space, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Link from 'next/link';
@@ -8,10 +9,17 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { createRequest } from '@/features/customers/customersSlice';
-import { CustomerForm, CustomerFormValues } from '@/features/customers/CustomerForm';
+import type { CustomerFormValues } from '@/features/customers/CustomerForm';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Paragraph } = Typography;
+
+// CustomerForm pulls in react-hook-form + zodResolver; its module graph
+// is fragile under Turbopack's prerender pass. Load it client-side only.
+const CustomerForm = dynamic(
+  () => import('@/features/customers/CustomerForm').then((m) => m.CustomerForm),
+  { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
+);
 
 export default function NewCustomerPage() {
   const dispatch = useAppDispatch();
