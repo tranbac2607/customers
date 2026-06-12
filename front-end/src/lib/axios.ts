@@ -155,7 +155,9 @@ api.interceptors.response.use(
     // Generic user-facing surface for failures the caller wouldn't
     // otherwise announce: BE is up but broke (5xx, or the Vercel
     // proxy returned 502 BAD_GATEWAY), or the request never reached
-    // the BE at all (network / DNS / offline — `status` is undefined).
+    // the BE at all (network / DNS / offline / CORS blocked —
+    // `status` is undefined in all of those cases because axios
+    // never gets a response back).
     //
     // 401 is intentionally NOT toasted here: the auto-refresh block
     // above already handles it (transparent retry on success,
@@ -167,7 +169,14 @@ api.interceptors.response.use(
       if (status && status >= 500) {
         toast.error('Server error. Please try again in a moment.');
       } else if (!status) {
-        toast.error('Network error. Please check your connection.');
+        // The two real-world causes here are (a) the BE / proxy is
+        // unreachable, and (b) a CORS misconfiguration blocked the
+        // request before the response came back. Both look the same
+        // to axios (`err.response === undefined`), so we describe
+        // both in the toast and let the user know where to look.
+        toast.error(
+          'Network error. Cannot reach the server. This is often a CORS or connectivity issue — check that the API origin is reachable and CORS is configured.',
+        );
       }
     }
 

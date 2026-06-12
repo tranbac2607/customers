@@ -40,7 +40,14 @@ export function CustomerList({
       title: 'Customer',
       key: 'fullName',
       sorter: true,
-      sortOrder:
+      // Don't pass a controlled `sortOrder` — Antd treats the
+      // column as fully managed by the parent in that mode and
+      // can swallow onChange when the value hasn't flipped yet,
+      // which made the second click a no-op. `defaultSortOrder`
+      // sets the initial direction from Redux state; Antd owns
+      // the direction UI from then on and reliably fires
+      // onChange on every click.
+      defaultSortOrder:
         currentSortBy === 'fullName' ? (currentOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (_, record) => (
         <Space>
@@ -101,7 +108,12 @@ export function CustomerList({
       key: 'createdAt',
       width: 140,
       sorter: true,
-      sortOrder:
+      // See the matching comment on the Customer column above:
+      // Antd's controlled-sortOrder mode swallows onChange
+      // when the parent value hasn't flipped yet, so we let
+      // Antd own the direction UI and just seed the initial
+      // state via defaultSortOrder.
+      defaultSortOrder:
         currentSortBy === 'createdAt' ? (currentOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (d: string) => (
         <Tooltip title={dayjs(d).format('YYYY-MM-DD HH:mm:ss')}>

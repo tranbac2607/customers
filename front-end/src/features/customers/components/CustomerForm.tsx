@@ -558,8 +558,11 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                   {/* paddingTop: 30 ≈ Antd's label height (24px) + a
                       little slack so the input (not the label) of
                       the Issue place Form.Item ends up on the same
-                      baseline as the Remove button on the right. */}
-                  <Col xs={24} sm={10} style={{ paddingTop: 30 }}>
+                      baseline as the Remove button on the right.
+                      sm={22} (was 10) so the input stretches across
+                      almost the entire card width and the Remove
+                      button sits at the card's right edge. */}
+                  <Col xs={24} sm={22} style={{ paddingTop: 30 }}>
                     <Controller
                       control={control}
                       name={`identityDocuments.${i}.issuePlace`}
