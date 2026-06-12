@@ -29,9 +29,11 @@ export default function EditCustomerPage() {
   );
 
   useEffect(() => {
+    fetchInitiated.current = true;
     if (id) dispatch(getRequest(id));
     return () => {
       dispatch(clearCurrent());
+      fetchInitiated.current = false;
     };
   }, [id, dispatch]);
 
@@ -46,6 +48,18 @@ export default function EditCustomerPage() {
     }
     prevUpdateLoading.current = updateLoading;
   }, [updateLoading, updateError, router]);
+
+  // Block rendering until the first fetch has been initiated. Without
+  // this, the very first render would see loading=false (stale from the
+  // previous page) and item=null, fall through to the 404 branch, and
+  // hit `item.fullName` below, throwing a TypeError caught by error.tsx
+  // (which the user saw as "Failed to load"). Showing a skeleton on
+  // first mount is both correct and friendlier.
+  const fetchInitiated = useRef(false);
+
+  if (!fetchInitiated.current) {
+    return <Skeleton active paragraph={{ rows: 8 }} />;
+  }
 
   if (getLoading && !item) {
     return <Skeleton active paragraph={{ rows: 8 }} />;

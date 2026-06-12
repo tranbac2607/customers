@@ -47,25 +47,29 @@ export default function CustomerDetailPage() {
   );
 
   useEffect(() => {
+    fetchInitiated.current = true;
     if (id) dispatch(getRequest(id));
     return () => {
       dispatch(clearCurrent());
+      fetchInitiated.current = false;
     };
   }, [id, dispatch]);
 
   const handleDelete = () => {
+    deleteInitiated.current = true;
     dispatch(deleteRequest(id!));
   };
 
-  // Watch for item disappearing from the store after delete. The guard
-  // prevents a duplicate toast: deleteSuccess sets `item = null` and the
-  // subsequent getRequest cleanup also calls clearCurrent (which sets
-  // `item = null` again), so without a one-shot guard the effect would
-  // fire twice.
-  const deleteToastShown = useRef(false);
+  // Show the success toast only when WE initiated a delete AND the item
+  // has actually disappeared from the store. Without `deleteInitiated`
+  // the effect also matches the very first render (loading=false from the
+  // previous page, item=null, error=null), which would fire the toast
+  // and redirect the user away from the detail page they just opened.
+  const fetchInitiated = useRef(false);
+  const deleteInitiated = useRef(false);
   useEffect(() => {
-    if (!loading && !item && !error && !deleteToastShown.current) {
-      deleteToastShown.current = true;
+    if (deleteInitiated.current && !loading && !item && !error) {
+      deleteInitiated.current = false;
       toast.success('Customer deleted');
       router.replace('/customers');
     }
@@ -77,6 +81,13 @@ export default function CustomerDetailPage() {
       toast.error(mutationError);
     }
   }, [mutationError]);
+
+  // Block rendering until the first fetch has actually been initiated,
+  // so the render never falls through to the 404 / error branch with
+  // a stale "item=null from the previous page" state.
+  if (!fetchInitiated.current) {
+    return <Skeleton active paragraph={{ rows: 10 }} />;
+  }
 
   if (loading && !item) {
     return <Skeleton active paragraph={{ rows: 10 }} />;

@@ -1,36 +1,22 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { ThemeMode } from '@/lib/theme';
+import { createSlice } from '@reduxjs/toolkit';
+
+export type ThemeMode = 'light' | 'dark';
 
 export interface UIState {
+  // The app is locked to the light theme for the recruiter demo. The
+  // state field is kept so any persisted redux state from before this
+  // change still loads cleanly.
   themeMode: ThemeMode;
-  sidebarCollapsed: boolean;
 }
 
 const initialState: UIState = {
   themeMode: 'light',
-  sidebarCollapsed: false,
 };
 
 const slice = createSlice({
   name: 'ui',
   initialState,
-  reducers: {
-    setThemeMode(state, action: PayloadAction<ThemeMode>) {
-      state.themeMode = action.payload;
-    },
-    toggleThemeMode(state) {
-      state.themeMode = state.themeMode === 'light' ? 'dark' : 'light';
-    },
-    setSidebarCollapsed(state, action: PayloadAction<boolean>) {
-      state.sidebarCollapsed = action.payload;
-    },
-    toggleSidebarCollapsed(state) {
-      state.sidebarCollapsed = !state.sidebarCollapsed;
-    },
-  },
+  reducers: {},
 });
-
-export const { setThemeMode, toggleThemeMode, setSidebarCollapsed, toggleSidebarCollapsed } =
-  slice.actions;
 
 export default slice.reducer;

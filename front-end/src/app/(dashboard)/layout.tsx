@@ -9,7 +9,6 @@ import {
   Space,
   Typography,
   Button,
-  Tooltip,
   Spin,
   Drawer,
   Grid,
@@ -23,15 +22,12 @@ import {
   MenuUnfoldOutlined,
   CloseOutlined,
   HomeOutlined,
-  BulbOutlined,
-  BulbFilled,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { hydrateUser, logout } from '@/features/auth/authSlice';
-import { toggleThemeMode } from '@/features/ui/uiSlice';
 import { api } from '@/lib/axios';
 import { env } from '@/lib/env';
 
@@ -117,7 +113,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
-  const themeMode = useAppSelector((s) => s.ui.themeMode);
 
   // Auto-collapse the Sider on small screens.
   useEffect(() => {
@@ -264,14 +259,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             style={{ fontSize: 18 }}
           />
           <Space size={isMobile ? 'small' : 'middle'}>
-            <Tooltip title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-              <Button
-                type="text"
-                icon={themeMode === 'dark' ? <BulbFilled /> : <BulbOutlined />}
-                onClick={() => dispatch(toggleThemeMode())}
-                style={{ fontSize: 18 }}
-              />
-            </Tooltip>
             <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
               <Space style={{ cursor: 'pointer' }}>
                 <Avatar style={{ background: user ? '#1677ff' : '#d9d9d9' }}>
