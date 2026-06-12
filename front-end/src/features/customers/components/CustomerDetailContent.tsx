@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Card,
@@ -36,11 +36,12 @@ import { resetCurrent, deleteRequest, getRequest } from '@/store/customers/custo
 import { IDENTITY_DOCUMENT_LABELS, GENDER_LABELS } from '@/store/customers/customerTypes';
 
 const { Title, Text } = Typography;
-const AUTO_RETRY_DELAY_MS = 1500;
-const MAX_AUTO_RETRIES = 2;
 
-export function CustomerDetailContent() {
-  const { id } = useParams<{ id: string }>();
+interface CustomerDetailContentProps {
+  id: string;
+}
+
+export function CustomerDetailContent({ id }: CustomerDetailContentProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { item, loading, error } = useAppSelector((s) => s.customers.current);
@@ -50,46 +51,21 @@ export function CustomerDetailContent() {
     lastDeletedId,
   } = useAppSelector((s) => s.customers.mutation);
 
-  const retryCount = useRef(0);
-  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track deletion in-flight using Redux state, not a ref
-  // (refs get reset by StrictMode cleanup before the saga completes)
   const prevDeleteSuccessId = useRef<string | null>(null);
 
-  const doFetch = useCallback(() => {
-    if (id) dispatch(getRequest(id));
-  }, [id, dispatch]);
-
-  // Only run effect when id is available — prevents dispatching getRequest(undefined)
+  // Fetch on mount - id is guaranteed to be available since page is async
   useEffect(() => {
-    if (!id) return;
-
-    retryCount.current = 0;
-    doFetch();
+    dispatch(getRequest(id));
     return () => {
       dispatch(resetCurrent());
-      if (retryTimer.current) clearTimeout(retryTimer.current);
     };
-  }, [id, dispatch, doFetch]);
-
-  // Auto-retry if first fetch fails
-  useEffect(() => {
-    if (!id) return;
-    if (loading || item || !error) return;
-
-    if (retryCount.current < MAX_AUTO_RETRIES) {
-      retryCount.current += 1;
-      retryTimer.current = setTimeout(() => {
-        doFetch();
-      }, AUTO_RETRY_DELAY_MS);
-    }
-  }, [loading, item, error, doFetch, id]);
+  }, [id, dispatch]);
 
   const handleDelete = () => {
-    dispatch(deleteRequest(id!));
+    dispatch(deleteRequest(id));
   };
 
-  // Detect deletion success via Redux state — survives StrictMode cleanup
+  // Detect deletion success via Redux state
   useEffect(() => {
     if (lastDeletedId && lastDeletedId === id && prevDeleteSuccessId.current !== lastDeletedId) {
       prevDeleteSuccessId.current = lastDeletedId;
@@ -117,14 +93,7 @@ export function CustomerDetailContent() {
         subTitle={error}
         extra={
           <Space>
-            <Button
-              onClick={() => {
-                retryCount.current = 0;
-                doFetch();
-              }}
-            >
-              Try again
-            </Button>
+            <Button onClick={() => dispatch(getRequest(id))}>Try again</Button>
             <Link href="/customers">
               <Button type="primary">Back to list</Button>
             </Link>

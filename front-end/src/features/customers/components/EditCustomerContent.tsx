@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Typography, Space, Button, Skeleton, Result } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
@@ -19,11 +19,11 @@ const CustomerForm = dynamic(
   { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
 );
 
-const AUTO_RETRY_DELAY_MS = 1500;
-const MAX_AUTO_RETRIES = 2;
+interface EditCustomerContentProps {
+  id: string;
+}
 
-export function EditCustomerContent() {
-  const { id } = useParams<{ id: string }>();
+export function EditCustomerContent({ id }: EditCustomerContentProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { item, loading: getLoading, error: getError } = useAppSelector((s) => s.customers.current);
@@ -31,38 +31,16 @@ export function EditCustomerContent() {
     (s) => s.customers.mutation,
   );
 
-  const retryCount = useRef(0);
-  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchInitiated = useRef(false);
 
-  const doFetch = useCallback(() => {
-    if (!id) return;
-    dispatch(getRequest(id));
-  }, [id, dispatch]);
-
-  // Only run effect when id is available — prevents dispatching getRequest(undefined)
+  // Fetch on mount - id is guaranteed to be available since page is async
   useEffect(() => {
-    if (!id) return;
-
-    retryCount.current = 0;
-    doFetch();
+    fetchInitiated.current = true;
+    dispatch(getRequest(id));
     return () => {
       dispatch(resetCurrent());
-      if (retryTimer.current) clearTimeout(retryTimer.current);
     };
-  }, [id, dispatch, doFetch]);
-
-  // Auto-retry if first fetch fails
-  useEffect(() => {
-    if (!id) return;
-    if (getLoading || item || !getError) return;
-
-    if (retryCount.current < MAX_AUTO_RETRIES) {
-      retryCount.current += 1;
-      retryTimer.current = setTimeout(() => {
-        doFetch();
-      }, AUTO_RETRY_DELAY_MS);
-    }
-  }, [getLoading, item, getError, doFetch, id]);
+  }, [id, dispatch]);
 
   // Detect transition: updateLoading true -> false = dispatch finished
   const prevUpdateLoading = useRef(false);
@@ -76,11 +54,6 @@ export function EditCustomerContent() {
     prevUpdateLoading.current = updateLoading;
   }, [updateLoading, updateError, router]);
 
-  // Wait for id to be resolved before showing anything
-  if (!id) {
-    return <Skeleton active paragraph={{ rows: 8 }} />;
-  }
-
   if (getLoading && !item) {
     return <Skeleton active paragraph={{ rows: 8 }} />;
   }
@@ -93,14 +66,7 @@ export function EditCustomerContent() {
         subTitle={getError}
         extra={
           <Space>
-            <Button
-              onClick={() => {
-                retryCount.current = 0;
-                doFetch();
-              }}
-            >
-              Try again
-            </Button>
+            <Button onClick={() => dispatch(getRequest(id))}>Try again</Button>
             <Link href="/customers">
               <Button type="primary">Back to list</Button>
             </Link>
@@ -141,7 +107,7 @@ export function EditCustomerContent() {
         issuePlace: d.issuePlace,
       })),
     };
-    dispatch(updateRequest({ id: id!, data: payload }));
+    dispatch(updateRequest({ id, data: payload }));
   };
 
   return (
