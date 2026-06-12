@@ -46,13 +46,15 @@ const identityDocSchema = z.object({
   type: z.enum(IDENTITY_DOCUMENT_TYPES, {
     message: 'Please choose a document type',
   }),
-  // Number is digits-only. The Input strips non-digits on change so the
-  // stored value is always a clean string of digits.
+  // Number/Code may be a CCCD (digits), a license plate (letters + digits
+  // + dashes, e.g. "B2-12345"), or a passport number (alphanumeric). The
+  // Input strips everything that isn't a letter, digit, or dash on
+  // change so the stored value matches the regex.
   number: z
     .string()
-    .min(1, 'Document number is required')
-    .regex(/^\d+$/, 'Document number must contain only digits')
-    .max(50, 'Document number is too long'),
+    .min(1, 'Number/Code is required')
+    .regex(/^[A-Za-z0-9-]+$/, 'No special characters allowed')
+    .max(50, 'Number/Code is too long'),
   issueDate: z.any().refine((v) => dayjs(v as Dayjs | string).isValid(), 'Issue date is required'),
   issuePlace: z.string().min(1, 'Issue place is required').max(200),
 });
@@ -67,13 +69,14 @@ const formSchema = z.object({
       'Date of birth must be in the past',
     ),
   address: z.string().min(1, 'Address is required').max(500),
-  // Vietnam phone: optional +84 / 84 / 0 prefix, then 9 or 10 digits,
-  // first digit non-zero. Examples: 0912345678, +84912345678, 849123456789.
+  // International phone: any combination of digits, spaces, parens,
+  // dashes, and a leading '+'. Matches the backend regex
+  // (back-end/src/modules/customers/customer.schema.ts). Length 6-30.
   phone: z
     .string()
-    .min(10, 'Phone is too short (e.g. 0912345678)')
-    .max(15, 'Phone is too long')
-    .regex(/^(0|\+84|84)?[1-9][0-9]{8,9}$/, 'Phone is invalid (e.g. 0912345678 or +84912345678)'),
+    .min(6, 'Phone is too short')
+    .max(30, 'Phone is too long')
+    .regex(/^[+0-9 ()-]+$/, 'Phone is invalid (e.g. +84 901 234 567 or +1 212 555 0100)'),
   // Email: standard strict-ish pattern. Local part allows alphanumerics,
   // dots, underscores, dashes, percent, plus. Domain must have at least
   // one dot and a 2+ letter TLD.
@@ -315,9 +318,10 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                 >
                   <Input
                     {...field}
-                    placeholder="0912345678 or +84912345678"
+                    placeholder="+84 901 234 567 or +1 212 555 0100"
                     size="large"
                     inputMode="tel"
+                    maxLength={30}
                   />
                 </Form.Item>
               )}
@@ -453,7 +457,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                       name={`identityDocuments.${i}.number`}
                       render={({ field }) => (
                         <Form.Item
-                          label="Number"
+                          label="Number/Code"
                           required
                           validateStatus={
                             (
@@ -475,16 +479,19 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                         >
                           <Input
                             {...field}
-                            placeholder="079090012345"
-                            inputMode="numeric"
+                            placeholder="e.g. 079090012345 or B212345"
+                            inputMode="text"
+                            maxLength={50}
                             onChange={(e) => {
-                              // Strip non-digit characters (spaces,
-                              // dashes, letters) so the field value is
-                              // always a clean string of digits. The
-                              // zod regex requires /^\d+$/ so any
-                              // stray char would fail validation.
-                              const digits = e.target.value.replace(/\D/g, '');
-                              field.onChange(digits);
+                              // Strip everything that isn't a letter,
+                              // digit, or dash so the visible value
+                              // matches the zod regex /^[A-Za-z0-9-]+$/
+                              // (the schema also rejects special chars
+                              // on submit, but stripping here keeps
+                              // the user from ever seeing rejected
+                              // characters in the field).
+                              const cleaned = e.target.value.replace(/[^A-Za-z0-9-]/g, '');
+                              field.onChange(cleaned);
                             }}
                           />
                         </Form.Item>
