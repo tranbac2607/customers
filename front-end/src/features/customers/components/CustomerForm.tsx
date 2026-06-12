@@ -18,6 +18,7 @@ import {
   Divider,
   Empty,
   Alert,
+  Tooltip,
 } from 'antd';
 import {
   PlusOutlined,
@@ -377,27 +378,35 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
           </Space>
         }
         extra={
-          <Button
-            type="dashed"
-            icon={<PlusOutlined />}
-            // Disable at the BE-mandated cap so the user can't queue
-            // a submit the BE would reject. Mirrors the zod .max(...)
-            // check above so the validation stays in sync.
-            disabled={fields.length >= MAX_IDENTITY_DOCS_PER_CUSTOMER}
-            onClick={() =>
-              append({
-                type: 'CCCD',
-                number: '',
-                // Leave the issue date undefined so the user explicitly
-                // picks it; auto-filling with "today" silently accepts
-                // a wrong date if the user doesn't notice.
-                issueDate: undefined as unknown as Dayjs,
-                issuePlace: '',
-              })
+          <Tooltip
+            title={
+              fields.length >= MAX_IDENTITY_DOCS_PER_CUSTOMER
+                ? `Maximum ${MAX_IDENTITY_DOCS_PER_CUSTOMER} documents (one per type)`
+                : ''
             }
           >
-            Add document
-          </Button>
+            <Button
+              type="dashed"
+              icon={<PlusOutlined />}
+              // Disable at the BE-mandated cap so the user can't queue
+              // a submit the BE would reject. Mirrors the zod .max(...)
+              // check above so the validation stays in sync.
+              disabled={fields.length >= MAX_IDENTITY_DOCS_PER_CUSTOMER}
+              onClick={() =>
+                append({
+                  type: 'CCCD',
+                  number: '',
+                  // Leave the issue date undefined so the user explicitly
+                  // picks it; auto-filling with "today" silently accepts
+                  // a wrong date if the user doesn't notice.
+                  issueDate: undefined as unknown as Dayjs,
+                  issuePlace: '',
+                })
+              }
+            >
+              Add document
+            </Button>
+          </Tooltip>
         }
         style={{ marginBottom: 16 }}
       >
@@ -546,7 +555,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                       )}
                     />
                   </Col>
-                  <Col xs={24} sm={20} style={{ marginTop: 8 }}>
+                  <Col xs={24} sm={10}>
                     <Controller
                       control={control}
                       name={`identityDocuments.${i}.issuePlace`}
@@ -577,7 +586,7 @@ export function CustomerForm({ initial, onSubmit, loading, error, mode }: Custom
                       )}
                     />
                   </Col>
-                  <Col xs={24} sm={4} style={{ textAlign: 'right' }}>
+                  <Col xs={24} sm={2} style={{ textAlign: 'right' }}>
                     <Button danger type="text" icon={<DeleteOutlined />} onClick={() => remove(i)}>
                       Remove
                     </Button>

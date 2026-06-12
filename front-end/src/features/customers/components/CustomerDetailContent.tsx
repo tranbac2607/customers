@@ -122,17 +122,28 @@ export function CustomerDetailContent({ id }: CustomerDetailContentProps) {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
         <Link href="/customers">
           <Button type="text" icon={<ArrowLeftOutlined />}>
-            Back to customers
+            Back
           </Button>
         </Link>
-      </Space>
+        <Title level={2} style={{ margin: 0 }}>
+          Customer details
+        </Title>
+      </div>
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={16}>
           <Card
+            styles={{ header: { paddingTop: 20 } }}
             title={
               <Space size="middle">
                 <div
@@ -179,8 +190,8 @@ export function CustomerDetailContent({ id }: CustomerDetailContentProps) {
               </Space>
             }
           >
-            <Title level={5}>
-              <UserOutlined /> Main information
+            <Title level={5} style={{ marginTop: 0 }}>
+              <UserOutlined /> Personal
             </Title>
             <Descriptions column={{ xs: 1, sm: 2 }} bordered size="small">
               <Descriptions.Item
@@ -205,6 +216,12 @@ export function CustomerDetailContent({ id }: CustomerDetailContentProps) {
                 {item.nationality}
               </Descriptions.Item>
               <Descriptions.Item label="Occupation">{item.occupation}</Descriptions.Item>
+            </Descriptions>
+
+            <Title level={5} style={{ marginTop: 24 }}>
+              <PhoneOutlined /> Contact
+            </Title>
+            <Descriptions column={{ xs: 1, sm: 2 }} bordered size="small">
               <Descriptions.Item
                 label={
                   <>

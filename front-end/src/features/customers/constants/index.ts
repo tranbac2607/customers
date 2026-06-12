@@ -17,7 +17,7 @@
  * limit on the FE before submit (so the user gets an instant error
  * instead of a round-trip rejection from the BE).
  */
-export const MAX_IDENTITY_DOCS_PER_CUSTOMER = 10;
+export const MAX_IDENTITY_DOCS_PER_CUSTOMER = 3;
 
 /**
  * Date format string used by the CustomerForm's DatePickers (date of

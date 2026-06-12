@@ -27,7 +27,7 @@ export const createCustomerSchema = z
     occupation: z.string().min(1).max(200).trim(),
     identityDocuments: z
       .array(identityDocumentSchema)
-      .max(10, 'Up to 10 identity documents allowed')
+      .max(3, 'Up to 3 identity documents allowed')
       .superRefine((arr, ctx) => {
         const seen = new Set<string>();
         arr.forEach((d, i) => {

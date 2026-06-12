@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { PAGE_SIZE_OPTIONS } from '@/lib/constants';
-import type { Customer } from '@/store/customers/customerTypes';
+import { IDENTITY_DOCUMENT_LABELS, type Customer } from '@/store/customers/customerTypes';
 import type { PaginationMeta } from '@/types/api';
 import { truncateFullName } from '@/features/customers/utils';
 
@@ -88,7 +88,7 @@ export function CustomerList({
           <Space size={4} wrap>
             {record.identityDocuments.map((d) => (
               <Tag key={d.id ?? d.type} color="geekblue" style={{ fontSize: 11 }}>
-                {d.type}
+                {IDENTITY_DOCUMENT_LABELS[d.type] ?? d.type}
               </Tag>
             ))}
           </Space>

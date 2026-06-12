@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Card, Space, Button, Typography } from 'antd';
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -123,9 +123,6 @@ export function CustomersPageContent() {
           </Paragraph>
         </div>
         <Space wrap>
-          <Button icon={<ReloadOutlined />} onClick={() => patchQuery({ ...state.query })}>
-            Refresh
-          </Button>
           <Link href="/customers/new">
             <Button type="primary" icon={<PlusOutlined />}>
               New customer

@@ -103,17 +103,23 @@ export function EditCustomerContent({ id }: EditCustomerContentProps) {
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
         <Link href={`/customers/${id}`}>
           <Button type="text" icon={<ArrowLeftOutlined />}>
-            Back to detail
+            Back
           </Button>
         </Link>
+        <Title level={2} style={{ margin: 0 }}>
+          Edit customer
+        </Title>
       </div>
-      <Title level={2} style={{ marginBottom: 4 }}>
-        Edit customer
-      </Title>
-      <Paragraph type="secondary">{item.fullName}</Paragraph>
 
       <Card>
         <CustomerForm

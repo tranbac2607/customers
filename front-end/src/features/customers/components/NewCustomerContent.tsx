@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Card, Typography, Space, Button } from 'antd';
+import { Card, Typography, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -60,16 +60,23 @@ export function NewCustomerContent() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
         <Link href="/customers">
           <Button type="text" icon={<ArrowLeftOutlined />}>
-            Back to customers
+            Back
           </Button>
         </Link>
-      </Space>
-      <Title level={2} style={{ marginBottom: 4 }}>
-        New customer
-      </Title>
+        <Title level={2} style={{ margin: 0 }}>
+          New customer
+        </Title>
+      </div>
       <Paragraph type="secondary">
         Fill in the customer&apos;s personal information and add at least one identity document.
       </Paragraph>
