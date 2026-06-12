@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'react-toastify';
 import { env } from './env';
+import { loadingStore } from './loadingStore';
 import type { ApiFailure } from '@/types/api';
 
 // All auth happens via httpOnly cookies set by the backend.
@@ -27,9 +28,29 @@ const flushQueue = (token: string | null) => {
   pendingQueue = [];
 };
 
+// Mark each request we want to track for the global loading overlay.
+const TRACKED_FLAG = '__loadingTracked';
+type TrackedConfig = InternalAxiosRequestConfig & { [TRACKED_FLAG]?: boolean };
+
+api.interceptors.request.use((cfg: TrackedConfig) => {
+  loadingStore.start();
+  cfg[TRACKED_FLAG] = true;
+  return cfg;
+});
+
 api.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    if ((r.config as TrackedConfig | undefined)?.[TRACKED_FLAG]) {
+      loadingStore.end();
+    }
+    return r;
+  },
   async (err: AxiosError<ApiFailure>) => {
+    const cfg = err.config as TrackedConfig | undefined;
+    if (cfg?.[TRACKED_FLAG]) {
+      loadingStore.end();
+    }
+
     const status = err.response?.status;
     const original = err.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const url = original?.url ?? '';

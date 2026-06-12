@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Layout, Menu, Avatar, Dropdown, Space, Typography, Button, Tooltip, Spin } from 'antd';
 import {
   DashboardOutlined,
@@ -38,16 +38,21 @@ const menuItems = [
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const authProbed = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const themeMode = useAppSelector((s) => s.ui.themeMode);
 
-  // Run on every layout mount: hit /me with the cookie, then either:
-  //   - populate user state (and render the chrome), or
-  //   - bounce to /login preserving the original path
+  // Hit /me once per layout mount. The Next.js App Router keeps this
+  // layout mounted while the user navigates between its child routes, so
+  // a `[]` dep array is exactly what we want — the probe does not re-run
+  // for every internal navigation (which previously caused race conditions
+  // with the page-level data fetches).
   useEffect(() => {
+    if (authProbed.current) return;
+    authProbed.current = true;
     let cancelled = false;
     fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
       credentials: 'include',
@@ -75,7 +80,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [pathname, dispatch, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = async () => {
     try {

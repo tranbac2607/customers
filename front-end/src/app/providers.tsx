@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useEffect, useRef, useSyncExternalStore } from 'react';
 import { Provider } from 'react-redux';
-import { ConfigProvider, App as AntdApp } from 'antd';
+import { ConfigProvider, App as AntdApp, Spin } from 'antd';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,15 +10,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import { makeStore } from '@/store';
 import { getTheme, type ThemeMode } from '@/lib/theme';
 import { bindAxiosAuth } from '@/lib/axios';
+import { loadingStore } from '@/lib/loadingStore';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/features/auth/authSlice';
 
-/**
- * Wires up axios's onUnauthorized side-effect (called when any
- * authenticated request gets a 401 even after a refresh attempt).
- * Public pages do NOT call /me here — only the dashboard layout does.
- */
 function AuthBridge({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -59,6 +55,45 @@ function ThemedShell({ children }: { children: ReactNode }) {
   );
 }
 
+function GlobalLoadingOverlay() {
+  // Subscribe to the in-flight API counter. Re-renders when the value changes.
+  const pending = useSyncExternalStore(loadingStore.subscribe, loadingStore.getSnapshot, () => 0);
+  if (pending <= 0) return null;
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(15, 23, 42, 0.35)',
+        backdropFilter: 'blur(2px)',
+        WebkitBackdropFilter: 'blur(2px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2000,
+        pointerEvents: 'none', // let clicks pass through; loading is informational
+      }}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          padding: '20px 28px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <Spin size="large" />
+        <span style={{ fontSize: 14, color: '#1f2937' }}>Loading…</span>
+      </div>
+    </div>
+  );
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   const storeRef = useRef<ReturnType<typeof makeStore> | null>(null);
 
@@ -70,7 +105,10 @@ export function Providers({ children }: { children: ReactNode }) {
     <Provider store={storeRef.current}>
       <AntdRegistry>
         <ThemedShell>
-          <AuthBridge>{children}</AuthBridge>
+          <AuthBridge>
+            {children}
+            <GlobalLoadingOverlay />
+          </AuthBridge>
         </ThemedShell>
       </AntdRegistry>
     </Provider>
