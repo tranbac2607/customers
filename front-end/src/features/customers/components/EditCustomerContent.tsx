@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,6 +19,9 @@ const CustomerForm = dynamic(
   { ssr: false, loading: () => <Card loading style={{ minHeight: 400 }} /> },
 );
 
+const AUTO_RETRY_DELAY_MS = 1200;
+const MAX_AUTO_RETRIES = 2;
+
 export function EditCustomerContent() {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
@@ -28,14 +31,41 @@ export function EditCustomerContent() {
     (s) => s.customers.mutation,
   );
 
+  const fetchInitiated = useRef(false);
+  const retryCount = useRef(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const doFetch = useCallback(
+    (attempt = 0) => {
+      if (!id) return;
+      dispatch(getRequest(id));
+    },
+    [id, dispatch],
+  );
+
   useEffect(() => {
     fetchInitiated.current = true;
-    if (id) dispatch(getRequest(id));
+    retryCount.current = 0;
+    doFetch(0);
     return () => {
       dispatch(resetCurrent());
       fetchInitiated.current = false;
+      if (retryTimer.current) clearTimeout(retryTimer.current);
     };
-  }, [id, dispatch]);
+  }, [id, dispatch, doFetch]);
+
+  // Auto-retry if first fetch fails
+  useEffect(() => {
+    if (!fetchInitiated.current) return;
+    if (getLoading || item || !getError) return;
+
+    if (retryCount.current < MAX_AUTO_RETRIES) {
+      retryCount.current += 1;
+      retryTimer.current = setTimeout(() => {
+        doFetch(retryCount.current);
+      }, AUTO_RETRY_DELAY_MS);
+    }
+  }, [getLoading, item, getError, doFetch]);
 
   // Detect transition: updateLoading true -> false = dispatch finished
   const prevUpdateLoading = useRef(false);
@@ -48,14 +78,6 @@ export function EditCustomerContent() {
     }
     prevUpdateLoading.current = updateLoading;
   }, [updateLoading, updateError, router]);
-
-  // Block rendering until the first fetch has been initiated. Without
-  // this, the very first render would see loading=false (stale from the
-  // previous page) and item=null, fall through to the 404 branch, and
-  // hit `item.fullName` below, throwing a TypeError caught by error.tsx
-  // (which the user saw as "Failed to load"). Showing a skeleton on
-  // first mount is both correct and friendlier.
-  const fetchInitiated = useRef(false);
 
   if (!fetchInitiated.current) {
     return <Skeleton active paragraph={{ rows: 8 }} />;
@@ -73,7 +95,14 @@ export function EditCustomerContent() {
         subTitle={getError}
         extra={
           <Space>
-            <Button onClick={() => dispatch(getRequest(id!))}>Try again</Button>
+            <Button
+              onClick={() => {
+                retryCount.current = 0;
+                doFetch(0);
+              }}
+            >
+              Try again
+            </Button>
             <Link href="/customers">
               <Button type="primary">Back to list</Button>
             </Link>

@@ -14,7 +14,6 @@ import {
   Grid,
 } from 'antd';
 import {
-  DashboardOutlined,
   TeamOutlined,
   LogoutOutlined,
   UserOutlined,
@@ -38,11 +37,6 @@ const { useBreakpoint } = Grid;
 const menuItems = [
   { key: '/', icon: <HomeOutlined />, label: <Link href="/">Home</Link> },
   { key: '/customers', icon: <TeamOutlined />, label: <Link href="/customers">Customers</Link> },
-  {
-    key: '/dashboard',
-    icon: <DashboardOutlined />,
-    label: <Link href="/dashboard">Dashboard</Link>,
-  },
 ];
 
 function SiderContent({

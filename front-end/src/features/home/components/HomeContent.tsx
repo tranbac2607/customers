@@ -63,9 +63,6 @@ export function HomeContent() {
                     <RightOutlined />
                   </Button>
                 </Link>
-                <Link href="http://localhost:4000/api/docs" target="_blank">
-                  <Button size="large">API docs</Button>
-                </Link>
               </Space>
               <Paragraph type="secondary" style={{ marginTop: 24, fontSize: 13 }}>
                 Stack: Next.js 16 · React 19 · TypeScript · Redux Toolkit + Saga · Antd 6 ·

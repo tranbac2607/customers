@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -36,6 +36,8 @@ import { resetCurrent, deleteRequest, getRequest } from '@/store/customers/custo
 import { IDENTITY_DOCUMENT_LABELS, GENDER_LABELS } from '@/store/customers/customerTypes';
 
 const { Title, Text } = Typography;
+const AUTO_RETRY_DELAY_MS = 1200;
+const MAX_AUTO_RETRIES = 2;
 
 export function CustomerDetailContent() {
   const { id } = useParams<{ id: string }>();
@@ -46,27 +48,44 @@ export function CustomerDetailContent() {
     (s) => s.customers.mutation,
   );
 
+  const fetchInitiated = useRef(false);
+  const retryCount = useRef(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteInitiated = useRef(false);
+
+  const doFetch = useCallback(() => {
+    if (id) dispatch(getRequest(id));
+  }, [id, dispatch]);
+
   useEffect(() => {
     fetchInitiated.current = true;
-    if (id) dispatch(getRequest(id));
+    retryCount.current = 0;
+    doFetch();
     return () => {
       dispatch(resetCurrent());
       fetchInitiated.current = false;
+      if (retryTimer.current) clearTimeout(retryTimer.current);
     };
-  }, [id, dispatch]);
+  }, [id, dispatch, doFetch]);
+
+  // Auto-retry if first fetch fails
+  useEffect(() => {
+    if (!fetchInitiated.current) return;
+    if (loading || item || !error) return;
+
+    if (retryCount.current < MAX_AUTO_RETRIES) {
+      retryCount.current += 1;
+      retryTimer.current = setTimeout(() => {
+        doFetch();
+      }, AUTO_RETRY_DELAY_MS);
+    }
+  }, [loading, item, error, doFetch]);
 
   const handleDelete = () => {
     deleteInitiated.current = true;
     dispatch(deleteRequest(id!));
   };
 
-  // Show the success toast only when WE initiated a delete AND the item
-  // has actually disappeared from the store. Without `deleteInitiated`
-  // the effect also matches the very first render (loading=false from the
-  // previous page, item=null, error=null), which would fire the toast
-  // and redirect the user away from the detail page they just opened.
-  const fetchInitiated = useRef(false);
-  const deleteInitiated = useRef(false);
   useEffect(() => {
     if (deleteInitiated.current && !loading && !item && !error) {
       deleteInitiated.current = false;
@@ -82,9 +101,6 @@ export function CustomerDetailContent() {
     }
   }, [mutationError]);
 
-  // Block rendering until the first fetch has actually been initiated,
-  // so the render never falls through to the 404 / error branch with
-  // a stale "item=null from the previous page" state.
   if (!fetchInitiated.current) {
     return <Skeleton active paragraph={{ rows: 10 }} />;
   }
@@ -101,7 +117,14 @@ export function CustomerDetailContent() {
         subTitle={error}
         extra={
           <Space>
-            <Button onClick={() => dispatch(getRequest(id))}>Try again</Button>
+            <Button
+              onClick={() => {
+                retryCount.current = 0;
+                doFetch();
+              }}
+            >
+              Try again
+            </Button>
             <Link href="/customers">
               <Button type="primary">Back to list</Button>
             </Link>
