@@ -62,8 +62,28 @@ api.interceptors.response.use(
     const original = err.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const url = original?.url ?? '';
 
-    // Auto-refresh on 401 (except for /auth/* and refresh itself)
-    if (status === 401 && !url.includes('/auth/') && original && !original._retry) {
+    // Endpoints that MUST NOT trigger the auto-refresh path:
+    //   - /auth/login     — 401 = wrong creds; refreshing won't help.
+    //   - /auth/refresh   — this IS the refresh endpoint; refreshing
+    //                       it would loop forever.
+    //   - /auth/logout    — 401 = token already invalid; we don't need
+    //                       to refresh just to log out a dead session.
+    //   - /auth/register  — 401/409 = email conflict / validation;
+    //                       refreshing won't help.
+    //
+    // /auth/me is intentionally NOT in this list: when the access
+    // token expires (15 min) but the refresh token is still valid
+    // (7 days), the dashboard layout's mount-once /me probe should
+    // be transparently refreshed and retried. If it stayed excluded,
+    // the probe would hard-401 and bounce the user to /login even
+    // though the refresh token could have rescued the session.
+    const isAuthExempt =
+      url.includes('/auth/login') ||
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/logout') ||
+      url.includes('/auth/register');
+
+    if (status === 401 && !isAuthExempt && original && !original._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           pendingQueue.push((_token) => {
