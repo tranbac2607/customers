@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 // BE internal URL — server-only. NOT exposed to the browser (no
 // NEXT_PUBLIC_ prefix), so the BE origin never leaks into the
@@ -30,6 +31,59 @@ const HOP_BY_HOP = new Set([
   'upgrade',
   'host',
 ]);
+
+// Options shape for `cookies().set()` (next/headers). Kept narrow
+// to just the attributes the BE actually uses today; expand if
+// the BE starts emitting others.
+type SetCookieOptions = {
+  path?: string;
+  maxAge?: number;
+  expires?: Date;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+  domain?: string;
+};
+
+// Parse a single Set-Cookie value like
+//   "access_token=abc; Path=/; Expires=Wed, 12 Jun 2026 …; HttpOnly; Secure; SameSite=None"
+// into the (name, value, options) shape cookies().set() wants.
+// Returns null for unparseable values (e.g. a cookie with no '=').
+function parseSetCookie(
+  raw: string,
+): { name: string; value: string; options: SetCookieOptions } | null {
+  const parts = raw.split(';').map((s) => s.trim());
+  if (parts.length === 0) return null;
+  const [pair, ...attrs] = parts;
+  const eq = pair.indexOf('=');
+  if (eq === -1) return null;
+  const name = pair.slice(0, eq).trim();
+  const value = pair.slice(eq + 1).trim();
+  const options: SetCookieOptions = {};
+  for (const attr of attrs) {
+    const [k, v] = attr.split('=').map((s) => s.trim());
+    const key = k.toLowerCase();
+    if (key === 'path') options.path = v;
+    else if (key === 'max-age') {
+      const n = Number(v);
+      if (!Number.isNaN(n)) options.maxAge = n;
+    } else if (key === 'expires') {
+      const d = new Date(v);
+      if (!Number.isNaN(d.getTime())) options.expires = d;
+    } else if (key === 'httponly') options.httpOnly = true;
+    else if (key === 'secure') options.secure = true;
+    else if (key === 'samesite') {
+      const s = (v ?? 'lax').toLowerCase();
+      if (s === 'lax' || s === 'strict' || s === 'none') {
+        options.sameSite = s;
+      }
+    } else if (key === 'domain') options.domain = v;
+    // Other attributes (Priority, Partitioned, …) are silently
+    // dropped here. The auth cookies we care about (access_token,
+    // refresh_token) only use the parsed ones.
+  }
+  return { name, value, options };
+}
 
 async function proxy(
   req: NextRequest,
@@ -81,13 +135,38 @@ async function proxy(
     );
   }
 
-  // Forward response headers. Set-Cookie MUST pass through so the
-  // browser stores the BE's auth cookies against the FE origin
-  // (vercel.app), making subsequent requests same-origin/same-site
-  // and avoiding third-party-cookie blocks on Chrome incognito /
-  // mobile.
+  // Re-set the BE's cookies on the OUTGOING response via the
+  // next/headers cookies() API. Forwarding them as raw `Set-Cookie`
+  // response headers (the previous attempt) works in some
+  // runtimes but is silently stripped on Vercel's edge layer,
+  // which is why login succeeded but every subsequent request
+  // came back unauthenticated on Chrome incognito / Safari /
+  // mobile. Per the Next.js docs, `cookies().set()` in a Route
+  // Handler is the supported path and goes through Next.js's
+  // own response object, which the edge layer honors.
+  const setCookies = (res.headers as Headers).getSetCookie?.() ?? [];
+  if (setCookies.length > 0) {
+    const cookieStore = await cookies();
+    for (const raw of setCookies) {
+      const parsed = parseSetCookie(raw);
+      if (!parsed) continue;
+      try {
+        cookieStore.set(parsed.name, parsed.value, parsed.options);
+      } catch {
+        // Skip cookies whose attributes we can't translate
+        // (e.g. SameSite=None over plain HTTP). A single bad
+        // cookie must not break the whole response.
+      }
+    }
+  }
+
+  // Forward the rest of the response headers (status, body,
+  // content-type, …). We deliberately do NOT re-append
+  // `Set-Cookie` here — the next/headers cookies() call above
+  // is what gets the cookies out to the browser.
   const resHeaders = new Headers(res.headers);
   for (const h of HOP_BY_HOP) resHeaders.delete(h);
+  resHeaders.delete('set-cookie');
 
   return new NextResponse(res.body, {
     status: res.status,
