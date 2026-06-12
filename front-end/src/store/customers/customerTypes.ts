@@ -14,6 +14,8 @@ export interface CustomerListQuery {
   fullName?: string;
   gender?: Gender;
   phone?: string;
+  nationality?: string;
+  occupation?: string;
   sortBy: SortBy;
   order: SortOrder;
 }

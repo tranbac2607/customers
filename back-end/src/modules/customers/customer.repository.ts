@@ -64,7 +64,8 @@ export const customerRepository = {
   },
 
   async findMany(query: ListCustomersQuery): Promise<FindManyResult> {
-    const { page, limit, search, fullName, gender, phone, sortBy, order } = query;
+    const { page, limit, search, fullName, gender, phone, nationality, occupation, sortBy, order } =
+      query;
     const filter: FilterQuery<ICustomer> = { isDeleted: false };
 
     // Specific-field search (preferred). These AND together.
@@ -84,6 +85,14 @@ export const customerRepository = {
         const pattern = digitsOnly.split('').join('\\D*');
         filter.phone = new RegExp(pattern, 'i');
       }
+    }
+    if (nationality && nationality.trim()) {
+      const escaped = nationality.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.nationality = new RegExp(escaped, 'i');
+    }
+    if (occupation && occupation.trim()) {
+      const escaped = occupation.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.occupation = new RegExp(escaped, 'i');
     }
 
     // Legacy general search — kept for backward compat. ORs across

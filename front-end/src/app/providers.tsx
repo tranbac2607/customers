@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { ConfigProvider, App as AntdApp, Spin } from 'antd';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { ToastContainer } from 'react-toastify';
+import NextTopLoader from 'nextjs-toploader';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { makeStore } from '@/store';
@@ -110,6 +111,19 @@ export function Providers({ children }: { children: ReactNode }) {
             <GlobalLoadingOverlay />
           </AuthBridge>
         </ThemedShell>
+        {/* Top progress bar for client-side route transitions. Hooks
+            into Next.js's router events to start on Link click and
+            finish when the new page commits. Uses the app's primary
+            blue (#1677ff) to stay on-brand. */}
+        <NextTopLoader
+          color="#1677ff"
+          height={3}
+          showSpinner={false}
+          crawlSpeed={200}
+          crawl={true}
+          easing="ease"
+          speed={400}
+        />
       </AntdRegistry>
     </Provider>
   );

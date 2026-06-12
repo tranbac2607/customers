@@ -58,6 +58,8 @@ export const listCustomersQuerySchema = z.object({
   fullName: z.string().trim().optional(),
   gender: z.enum(GENDERS).optional(),
   phone: z.string().trim().optional(),
+  nationality: z.string().trim().optional(),
+  occupation: z.string().trim().optional(),
   sortBy: z.enum(['createdAt', 'fullName', 'dateOfBirth', 'email']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
 });

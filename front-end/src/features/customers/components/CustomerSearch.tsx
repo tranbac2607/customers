@@ -10,6 +10,8 @@ export interface CustomerSearchValues {
   fullName?: string;
   gender?: Gender;
   phone?: string;
+  nationality?: string;
+  occupation?: string;
 }
 
 interface CustomerSearchProps {
@@ -34,7 +36,7 @@ export function CustomerSearch({ control, loading, onSearch, onClear }: Customer
           control={control}
           name="fullName"
           render={({ field }) => (
-            <Input {...field} placeholder="Name" allowClear size="middle" style={{ width: 220 }} />
+            <Input {...field} placeholder="Name" allowClear size="middle" style={{ width: 180 }} />
           )}
         />
         <Controller
@@ -46,7 +48,7 @@ export function CustomerSearch({ control, loading, onSearch, onClear }: Customer
               placeholder="Gender"
               allowClear
               size="middle"
-              style={{ width: 160 }}
+              style={{ width: 140 }}
               options={GENDERS.map((g) => ({ value: g, label: GENDER_LABELS[g] }))}
             />
           )}
@@ -62,13 +64,39 @@ export function CustomerSearch({ control, loading, onSearch, onClear }: Customer
               size="middle"
               inputMode="tel"
               maxLength={15}
-              style={{ width: 200 }}
+              style={{ width: 160 }}
               onChange={(e) => {
                 // Phone numbers are digits-only; strip everything else
                 // as the user types so the value sent to the BE is clean.
                 const digits = e.target.value.replace(/\D/g, '');
                 field.onChange(digits);
               }}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="nationality"
+          render={({ field }) => (
+            <Input
+              {...field}
+              placeholder="Nationality"
+              allowClear
+              size="middle"
+              style={{ width: 180 }}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="occupation"
+          render={({ field }) => (
+            <Input
+              {...field}
+              placeholder="Occupation"
+              allowClear
+              size="middle"
+              style={{ width: 180 }}
             />
           )}
         />

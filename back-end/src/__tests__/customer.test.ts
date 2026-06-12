@@ -140,6 +140,24 @@ describe('Customers', () => {
     expect(res.body.data.items.length).toBeGreaterThan(0);
   });
 
+  it('GET with nationality filter (case-insensitive substring)', async () => {
+    const res = await request(app)
+      .get('/api/customers?nationality=viet')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    // Multiple seeded customers are Vietnamese.
+    expect(res.body.data.items.length).toBeGreaterThan(0);
+  });
+
+  it('GET with occupation filter (case-insensitive substring)', async () => {
+    const res = await request(app)
+      .get('/api/customers?occupation=engineer')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    // Seed data has multiple Engineer occupations.
+    expect(res.body.data.items.length).toBeGreaterThan(0);
+  });
+
   it('GET /api/customers/:id → 200; non-existent → 404', async () => {
     const list = await request(app)
       .get('/api/customers?limit=1')
