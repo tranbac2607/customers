@@ -16,6 +16,7 @@ interface CustomerListProps {
   pagination: PaginationMeta;
   mutationLoading?: boolean;
   onPageChange: (page: number, pageSize: number) => void;
+  onLimitChange: (pageSize: number) => void;
   onDelete: (id: string) => void;
   onSortChange: (sortBy: string, order: 'asc' | 'desc') => void;
   currentSortBy: string;
@@ -28,6 +29,7 @@ export function CustomerList({
   pagination,
   mutationLoading,
   onPageChange,
+  onLimitChange,
   onDelete,
   onSortChange,
   currentSortBy,
@@ -145,8 +147,8 @@ export function CustomerList({
         if (field) {
           onSortChange(field, order);
         }
-        if (paginationConfig.current && paginationConfig.pageSize) {
-          onPageChange(paginationConfig.current, paginationConfig.pageSize);
+        if (paginationConfig.current) {
+          onPageChange(paginationConfig.current, paginationConfig.pageSize ?? pagination.limit);
         }
       }}
       pagination={{
@@ -156,6 +158,9 @@ export function CustomerList({
         showSizeChanger: true,
         pageSizeOptions: PAGE_SIZE_OPTIONS.map(String),
         showTotal: (total) => `${total} customer${total !== 1 ? 's' : ''}`,
+        onShowSizeChange: (_current: number, pageSize: number) => {
+          onLimitChange(pageSize);
+        },
       }}
     />
   );

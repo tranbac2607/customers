@@ -32,6 +32,7 @@ export function CustomersPageContent() {
   const {
     state,
     setPage,
+    setLimit,
     setSort,
     patchQuery,
     reset: resetQuery,
@@ -148,6 +149,7 @@ export function CustomersPageContent() {
           pagination={pagination}
           mutationLoading={mutationLoading}
           onPageChange={setPage}
+          onLimitChange={setLimit}
           onDelete={(id) => dispatch(deleteRequest(id))}
           onSortChange={setSort}
           currentSortBy={state.sortBy}
