@@ -18,9 +18,6 @@ interface CustomerListProps {
   onPageChange: (page: number, pageSize: number) => void;
   onLimitChange: (pageSize: number) => void;
   onDelete: (id: string) => void;
-  onSortChange: (sortBy: string, order: 'asc' | 'desc') => void;
-  currentSortBy: string;
-  currentOrder: 'asc' | 'desc';
 }
 
 export function CustomerList({
@@ -31,24 +28,11 @@ export function CustomerList({
   onPageChange,
   onLimitChange,
   onDelete,
-  onSortChange,
-  currentSortBy,
-  currentOrder,
 }: CustomerListProps) {
   const columns: ColumnsType<Customer> = [
     {
       title: 'Customer',
       key: 'fullName',
-      sorter: true,
-      // Don't pass a controlled `sortOrder` — Antd treats the
-      // column as fully managed by the parent in that mode and
-      // can swallow onChange when the value hasn't flipped yet,
-      // which made the second click a no-op. `defaultSortOrder`
-      // sets the initial direction from Redux state; Antd owns
-      // the direction UI from then on and reliably fires
-      // onChange on every click.
-      defaultSortOrder:
-        currentSortBy === 'fullName' ? (currentOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (_, record) => (
         <Space>
           <Avatar style={{ background: '#1677ff' }} icon={<UserOutlined />} />
@@ -107,14 +91,6 @@ export function CustomerList({
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 140,
-      sorter: true,
-      // See the matching comment on the Customer column above:
-      // Antd's controlled-sortOrder mode swallows onChange
-      // when the parent value hasn't flipped yet, so we let
-      // Antd own the direction UI and just seed the initial
-      // state via defaultSortOrder.
-      defaultSortOrder:
-        currentSortBy === 'createdAt' ? (currentOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (d: string) => (
         <Tooltip title={dayjs(d).format('YYYY-MM-DD HH:mm:ss')}>
           {dayjs(d).format('MMM D, YYYY')}
@@ -162,13 +138,7 @@ export function CustomerList({
       columns={columns}
       loading={loading}
       scroll={{ x: 900 }}
-      onChange={(paginationConfig, _filters, sorter) => {
-        const s = Array.isArray(sorter) ? sorter[0] : sorter;
-        const field = typeof s?.field === 'string' ? s.field : null;
-        const order: 'asc' | 'desc' = s?.order === 'ascend' ? 'asc' : 'desc';
-        if (field) {
-          onSortChange(field, order);
-        }
+      onChange={(paginationConfig) => {
         if (paginationConfig.current) {
           onPageChange(paginationConfig.current, paginationConfig.pageSize ?? pagination.limit);
         }

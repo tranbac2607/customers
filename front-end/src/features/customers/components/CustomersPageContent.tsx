@@ -26,20 +26,20 @@ export function CustomersPageContent() {
   const mutationLoading = useAppSelector((s) => s.customers.mutation.loading);
   const mutationError = useAppSelector((s) => s.customers.mutation.error);
 
-  // Generic list query state (page / limit / sort / query fields).
-  // Custom hook so any future list screen (orders, transactions, …)
-  // can reuse it.
+  // Generic list query state (page / limit / query fields). Custom
+  // hook so any future list screen (orders, transactions, …) can
+  // reuse it. Sort is intentionally NOT surfaced to the UI
+  // anymore — the table's sort header was a source of subtle
+  // Antd bugs; the list always renders in the BE's default order
+  // (createdAt desc), which the customersSlice re-applies on
+  // every listRequest via the BE schema's `.default()`.
   const {
     state,
     setPage,
     setLimit,
-    setSort,
     patchQuery,
     reset: resetQuery,
-  } = useListQuery<CustomerSearchValues>(EMPTY_QUERY, {
-    defaultSortBy: lastQuery.sortBy,
-    defaultOrder: lastQuery.order,
-  });
+  } = useListQuery<CustomerSearchValues>(EMPTY_QUERY);
 
   // Separate react-hook-form instance for the search inputs. Keeping it
   // out of useListQuery means future list screens can use any form
@@ -153,9 +153,6 @@ export function CustomersPageContent() {
           onPageChange={setPage}
           onLimitChange={setLimit}
           onDelete={(id) => dispatch(deleteRequest(id))}
-          onSortChange={setSort}
-          currentSortBy={state.sortBy}
-          currentOrder={state.order}
         />
       </Card>
     </div>
