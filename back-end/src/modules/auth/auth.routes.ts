@@ -82,11 +82,20 @@ router.post('/login', validate(loginSchema), asyncHandler(authController.login))
  */
 router.post(
   '/register',
-  validate(loginSchema.extend({ name: z.string().min(1), role: z.enum(['admin', 'user']).optional() })),
+  validate(
+    loginSchema.extend({ name: z.string().min(1), role: z.enum(['admin', 'user']).optional() }),
+  ),
   asyncHandler(async (req, res) => {
-    const { email, password, name, role } = req.body as { email: string; password: string; name: string; role?: 'admin' | 'user' };
+    const { email, password, name, role } = req.body as {
+      email: string;
+      password: string;
+      name: string;
+      role?: 'admin' | 'user';
+    };
     const user = await authService.register({ email, password, name, role });
-    res.status(201).json(ok({ id: user._id.toString(), email: user.email, name: user.name, role: user.role }));
+    res
+      .status(201)
+      .json(ok({ id: user._id.toString(), email: user.email, name: user.name, role: user.role }));
   }),
 );
 
@@ -130,12 +139,7 @@ router.post('/refresh', validate(refreshSchema), asyncHandler(authController.ref
  *     responses:
  *       204: { description: Logged out }
  */
-router.post(
-  '/logout',
-  authenticate,
-  validate(refreshSchema),
-  asyncHandler(authController.logout),
-);
+router.post('/logout', authenticate, asyncHandler(authController.logout));
 
 /**
  * @openapi
