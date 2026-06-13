@@ -118,24 +118,36 @@ export const authService = {
       throw ApiError.unauthorized('Invalid refresh token');
     }
 
-    const user = await authRepository.findByIdWithRefreshTokens(payload.sub);
+    // Verify the user exists. We don't need to load refreshTokens here —
+    // the atomic rotation below does the membership check + update in one
+    // query, which is race-safe (concurrent refreshes can no longer wipe
+    // other devices' sessions).
+    const user = await authRepository.findById(payload.sub);
     if (!user) throw ApiError.unauthorized('User not found');
 
     const incomingHash = hashToken(incomingRefresh);
-    if (!user.refreshTokens.includes(incomingHash)) {
-      // Reuse-detection: purge all sessions
-      user.refreshTokens = [];
-      await user.save();
-      clearAuthCookies(res);
-      throw ApiError.unauthorized('Refresh token reuse detected');
-    }
-
     const newJtiId = newJti();
     const accessToken = signAccessToken({ sub: user._id.toString(), role: user.role });
     const newRefresh = signRefreshToken({ sub: user._id.toString(), jti: newJtiId });
     const newHash = hashToken(newRefresh);
 
-    await authRepository.rotateRefreshToken(user._id.toString(), incomingHash, newHash);
+    // Atomic claim: rotate only if oldHashed is still in the list. On
+    // race (concurrent refresh from another tab) or genuine reuse, the
+    // filter won't match and we return false. We reject THIS request
+    // but do NOT purge other devices — that previously caused whole
+    // accounts to be logged out from a harmless race. Strict reuse-
+    // detection (purge on real token theft) would need a jti-chain;
+    // out of scope for now.
+    const rotated = await authRepository.rotateRefreshToken(
+      user._id.toString(),
+      incomingHash,
+      newHash,
+    );
+    if (!rotated) {
+      clearAuthCookies(res);
+      throw ApiError.unauthorized('Refresh token already used or revoked');
+    }
+
     setAuthCookies(res, accessToken, newRefresh);
     return { accessToken, refreshToken: newRefresh, accessExpiresIn: ACCESS_TTL_SECONDS };
   },
