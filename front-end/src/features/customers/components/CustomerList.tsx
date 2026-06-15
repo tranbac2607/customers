@@ -83,6 +83,10 @@ export function CustomerList({
     {
       title: 'Customer',
       key: 'fullName',
+      // Pin a min-width so the avatar + name + email stack never gets
+      // crushed below the point of being tappable/legible, even on
+      // very narrow viewports.
+      width: 220,
       render: (_, record) => (
         <Space>
           <Avatar style={{ background: '#1677ff' }} icon={<UserOutlined />} />
@@ -115,12 +119,16 @@ export function CustomerList({
         </Tag>
       ),
     },
-    { title: 'Nationality', dataIndex: 'nationality', key: 'nationality', width: 140 },
-    { title: 'Occupation', dataIndex: 'occupation', key: 'occupation', width: 160 },
+    // Hide on xs/sm — keeps the table legible on phones and small
+    // tablets; user can still see nationality from the detail view.
+    { title: 'Nationality', dataIndex: 'nationality', key: 'nationality', width: 140, responsive: ['md'] },
+    // Hide on xs/sm/md — only shown on lg+ where the table has room.
+    { title: 'Occupation', dataIndex: 'occupation', key: 'occupation', width: 160, responsive: ['lg'] },
     {
       title: 'Identity docs',
       key: 'identityDocuments',
       width: 140,
+      responsive: ['sm'],
       render: (_, record) => {
         if (!record.identityDocuments?.length) {
           return <span style={{ color: '#8c8c8c' }}>—</span>;
@@ -141,6 +149,7 @@ export function CustomerList({
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 140,
+      responsive: ['sm'],
       render: (d: string) => (
         <Tooltip title={dayjs(d).format('YYYY-MM-DD HH:mm:ss')}>
           {dayjs(d).format('MMM D, YYYY')}
@@ -255,30 +264,39 @@ export function CustomerList({
   return (
     <>
       {toolbar}
-      <Table<Customer>
-        rowKey="id"
-        dataSource={items}
-        columns={columns}
-        loading={loading}
-        scroll={{ x: 900 }}
-        rowSelection={rowSelection ?? undefined}
-        onChange={(paginationConfig) => {
-          if (paginationConfig.current) {
-            onPageChange(paginationConfig.current, paginationConfig.pageSize ?? pagination.limit);
-          }
-        }}
-        pagination={{
-          current: pagination.page,
-          pageSize: pagination.limit,
-          total: pagination.total,
-          showSizeChanger: true,
-          pageSizeOptions: PAGE_SIZE_OPTIONS.map(String),
-          showTotal: (total) => `${total} customer${total !== 1 ? 's' : ''}`,
-          onShowSizeChange: (_current: number, pageSize: number) => {
-            onLimitChange(pageSize);
-          },
-        }}
-      />
+      {/*
+        Wrap the Table in an overflowX:auto container so the table's
+        own horizontal scrollbar (driven by scroll.x: 'max-content')
+        is never clipped by an ancestor (Card, Content, etc.). The
+        wrapper itself becomes the scroll container on tiny viewports
+        where even the essential columns don't fit.
+      */}
+      <div style={{ overflowX: 'auto', width: '100%' }}>
+        <Table<Customer>
+          rowKey="id"
+          dataSource={items}
+          columns={columns}
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          rowSelection={rowSelection ?? undefined}
+          onChange={(paginationConfig) => {
+            if (paginationConfig.current) {
+              onPageChange(paginationConfig.current, paginationConfig.pageSize ?? pagination.limit);
+            }
+          }}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.limit,
+            total: pagination.total,
+            showSizeChanger: true,
+            pageSizeOptions: PAGE_SIZE_OPTIONS.map(String),
+            showTotal: (total) => `${total} customer${total !== 1 ? 's' : ''}`,
+            onShowSizeChange: (_current: number, pageSize: number) => {
+              onLimitChange(pageSize);
+            },
+          }}
+        />
+      </div>
     </>
   );
 }
