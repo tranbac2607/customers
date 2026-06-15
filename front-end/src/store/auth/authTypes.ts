@@ -1,8 +1,12 @@
 export interface UserResponse {
   id: string;
   email: string;
+  username: string;
   name: string;
   role: 'admin' | 'user';
+  status: 'active' | 'pending' | 'disabled';
+  avatarUrl?: string;
+  emailVerified: boolean;
   lastLoginAt?: string;
   createdAt: string;
 }

@@ -23,6 +23,14 @@ const envSchema = z.object({
     .default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
 
+  // Email
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('no-reply@customers.local'),
+  APP_BASE_URL: z.string().default('http://localhost:3000'),
+
+  // Feature flags
+  REQUIRE_EMAIL_VERIFICATION: z.coerce.boolean().default(false),
+
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).default('info'),
 });
 

@@ -170,10 +170,25 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
   const userMenu = {
     items: [
       {
-        key: 'profile',
+        key: 'email',
         icon: <UserOutlined />,
         label: <Text type="secondary">{user?.email}</Text>,
         disabled: true,
+      },
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: <Link href="/profile">Profile</Link>,
+      },
+      {
+        key: 'admin-users',
+        icon: <TeamOutlined />,
+        label: <Link href="/admin/users">Admin: Users</Link>,
+      },
+      {
+        key: 'admin-activity',
+        icon: <TeamOutlined />,
+        label: <Link href="/admin/activity-log">Admin: Activity log</Link>,
       },
       { type: 'divider' as const },
       {
@@ -267,23 +282,47 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
             onClick={() => (isMobile ? setDrawerOpen(true) : setCollapsed(!collapsed))}
             style={{ fontSize: 18 }}
           />
-          <Space size={isMobile ? 'small' : 'middle'}>
+          <div style={{ display: 'flex', alignItems: 'center', height: 32 }}>
             <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
-              <Space style={{ cursor: 'pointer' }}>
-                <Avatar style={{ background: user ? '#1677ff' : '#d9d9d9' }}>
-                  {user ? user.name[0]?.toUpperCase() : <UserOutlined />}
-                </Avatar>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto auto',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  height: 32,
+                }}
+              >
+                {user?.avatarUrl ? (
+                  <Avatar
+                    size={32}
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    style={{ background: 'transparent' }}
+                  />
+                ) : (
+                  <Avatar style={{ background: user ? '#1677ff' : '#d9d9d9' }}>
+                    {user ? user.name[0]?.toUpperCase() : <UserOutlined />}
+                  </Avatar>
+                )}
                 {!isMobile && (
                   <Text
                     strong
-                    style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    style={{
+                      maxWidth: 160,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      lineHeight: '32px',
+                      whiteSpace: 'nowrap',
+                    }}
                   >
                     {user?.name ?? <Spin size="small" />}
                   </Text>
                 )}
-              </Space>
+              </div>
             </Dropdown>
-          </Space>
+          </div>
         </Header>
         <Content
           style={{

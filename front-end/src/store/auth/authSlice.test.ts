@@ -10,8 +10,12 @@ import reducer, {
 const user = {
   id: 'u1',
   email: 'admin@example.com',
+  username: 'admin',
   name: 'Admin',
   role: 'admin' as const,
+  status: 'active' as const,
+  emailVerified: true,
+  themePreference: 'light' as const,
   createdAt: '2025-01-01T00:00:00Z',
 };
 
@@ -22,6 +26,7 @@ describe('authSlice', () => {
     error: null,
     errorCode: null,
     isAuthenticated: false,
+    authChecked: false,
   };
 
   it('returns initial state', () => {
@@ -31,7 +36,7 @@ describe('authSlice', () => {
   it('loginRequest sets loading + clears error and errorCode', () => {
     const state = reducer(
       { ...initial, error: 'old', errorCode: 'INVALID_CREDENTIALS' },
-      loginRequest({ email: 'a', password: 'b' }),
+      loginRequest({ identifier: 'a', password: 'b' }),
     );
     expect(state).toEqual({
       ...initial,
@@ -72,6 +77,7 @@ describe('authSlice', () => {
       error: 'oops',
       errorCode: 'INVALID_CREDENTIALS',
       isAuthenticated: true,
+      authChecked: true,
     };
     expect(reducer(logged, logout())).toEqual(initial);
   });

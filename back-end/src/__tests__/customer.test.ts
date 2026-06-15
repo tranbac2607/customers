@@ -40,6 +40,7 @@ beforeAll(async () => {
   const passwordHash = await hashPassword('Admin@123');
   await authRepository.create({
     email: 'admin@example.com',
+    username: 'admin',
     passwordHash,
     name: 'Admin',
     role: 'admin',
@@ -48,7 +49,7 @@ beforeAll(async () => {
   app = createApp();
   const login = await request(app)
     .post('/api/auth/login')
-    .send({ email: 'admin@example.com', password: 'Admin@123' });
+    .send({ identifier: 'admin@example.com', password: 'Admin@123' });
   token = login.body.data.accessToken;
 });
 

@@ -46,13 +46,17 @@ function AuthBridge({ children }: { children: ReactNode }) {
 }
 
 function ThemedShell({ children }: { children: ReactNode }) {
-  const mode = useAppSelector((s) => s.ui.themeMode);
-  const theme = getTheme(mode);
+  // App is light-only. The slice still has themeMode/resolvedTheme
+  // for future re-introduction; we just pin both to 'light' here.
+  useAppSelector((s) => s.ui.themeMode);
+  const theme = getTheme('light');
+
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = mode;
+      document.documentElement.dataset.theme = 'light';
     }
-  }, [mode]);
+  }, []);
+
   return (
     <ConfigProvider theme={theme}>
       <AntdApp>
@@ -60,7 +64,7 @@ function ThemedShell({ children }: { children: ReactNode }) {
         <ToastContainer
           position="top-right"
           autoClose={3000}
-          theme={mode}
+          theme="light"
           hideProgressBar={false}
           newestOnTop
         />

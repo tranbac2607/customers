@@ -4,16 +4,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Card, Form, Input, Button, Typography, Space, Divider, Alert } from 'antd';
-import { LockOutlined, MailOutlined, LoginOutlined } from '@ant-design/icons';
+import { LockOutlined, UserOutlined, LoginOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginRequest, type LoginErrorCode } from '@/store/auth/authSlice';
 
 const { Title, Paragraph, Text } = Typography;
-const SAVED_EMAIL_KEY = 'saved_email';
+const SAVED_IDENTIFIER_KEY = 'saved_identifier';
 
 interface LoginValues {
-  email: string;
+  identifier: string;
   password: string;
 }
 
@@ -24,7 +24,11 @@ interface LoginValues {
 function errorMessageFor(code: LoginErrorCode | null): string | null {
   switch (code) {
     case 'INVALID_CREDENTIALS':
-      return 'Invalid email or password';
+      return 'Invalid email/username or password';
+    case 'ACCOUNT_DISABLED':
+      return 'Your account has been disabled. Please contact an admin.';
+    case 'EMAIL_NOT_VERIFIED':
+      return 'Please verify your email before signing in.';
     case 'SERVER_ERROR':
       return 'Server error. Please try again later.';
     case 'NETWORK_ERROR':
@@ -45,14 +49,15 @@ export function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const { loading, error, errorCode, isAuthenticated, user } = useAppSelector((s) => s.auth);
+  const { loading, errorCode, isAuthenticated, user } = useAppSelector((s) => s.auth);
 
-  // Restore saved email so user doesn't have to re-type after session expiry
-  const [savedEmail, setSavedEmail] = useState('');
+  // Restore saved identifier (email or username) so the user doesn't
+  // have to re-type after session expiry.
+  const [savedIdentifier, setSavedIdentifier] = useState('');
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(SAVED_EMAIL_KEY);
-      if (saved) setSavedEmail(saved);
+      const saved = localStorage.getItem(SAVED_IDENTIFIER_KEY);
+      if (saved) setSavedIdentifier(saved);
     } catch {
       // localStorage may be unavailable in some environments
     }
@@ -74,11 +79,13 @@ export function LoginContent() {
 
   useEffect(() => {
     if (isAuthenticated && !wasAuthenticated.current) {
-      // Save email on successful login for re-auth later
-      const email = (document.querySelector('input[name="email"]') as HTMLInputElement)?.value;
-      if (email) {
+      // Save identifier on successful login for re-auth later
+      const identifier = (
+        document.querySelector('input[name="identifier"]') as HTMLInputElement
+      )?.value;
+      if (identifier) {
         try {
-          localStorage.setItem(SAVED_EMAIL_KEY, email);
+          localStorage.setItem(SAVED_IDENTIFIER_KEY, identifier);
         } catch {
           // ignore
         }
@@ -154,17 +161,21 @@ export function LoginContent() {
           autoComplete="off"
           disabled={loading}
           requiredMark={false}
-          initialValues={{ email: savedEmail, password: '' }}
+          initialValues={{ identifier: savedIdentifier, password: '' }}
         >
           <Form.Item
-            label="Email"
-            name="email"
+            label="Email or username"
+            name="identifier"
             rules={[
-              { required: true, message: 'Please enter your email' },
-              { type: 'email', message: 'Please enter a valid email' },
+              { required: true, message: 'Please enter your email or username' },
+              { min: 3, message: 'At least 3 characters' },
             ]}
           >
-            <Input prefix={<MailOutlined />} placeholder="admin@example.com" autoComplete="email" />
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="admin@example.com or admin"
+              autoComplete="username"
+            />
           </Form.Item>
 
           <Form.Item
@@ -195,6 +206,15 @@ export function LoginContent() {
           </Form.Item>
         </Form>
 
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+          <Link href="/forgot-password" style={{ color: '#1677ff' }}>
+            Forgot password?
+          </Link>
+          <Link href="/register" style={{ color: '#1677ff' }}>
+            Create an account
+          </Link>
+        </div>
+
         <Divider plain style={{ margin: '8px 0', fontSize: 12, color: '#94a3b8' }}>
           Demo credentials
         </Divider>
@@ -209,6 +229,8 @@ export function LoginContent() {
           }}
         >
           <Text code>admin@example.com</Text>
+          <Text type="secondary"> / </Text>
+          <Text code>admin</Text>
           <br />
           <Text code>Admin@123</Text>
         </div>

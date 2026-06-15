@@ -147,6 +147,73 @@ const slice = createSlice({
       state.mutation.loading = false;
       state.mutation.error = action.payload;
     },
+    // RESTORE (from trash)
+    restoreRequest(state, _action: PayloadAction<string>) {
+      state.mutation.loading = true;
+      state.mutation.error = null;
+    },
+    restoreSuccess(state, action: PayloadAction<Customer>) {
+      state.mutation.loading = false;
+      // If we're showing the live list, swap the restored customer in.
+      if (state.list.items.some((c) => c.id === action.payload.id)) {
+        state.list.items = state.list.items.map((c) =>
+          c.id === action.payload.id ? action.payload : c,
+        );
+      }
+    },
+    restoreFailure(state, action: PayloadAction<string>) {
+      state.mutation.loading = false;
+      state.mutation.error = action.payload;
+    },
+    // BULK DELETE
+    bulkDeleteRequest(state, _action: PayloadAction<string[]>) {
+      state.mutation.loading = true;
+      state.mutation.error = null;
+    },
+    bulkDeleteSuccess(state, _action: PayloadAction<{ requested: number; deleted: number }>) {
+      state.mutation.loading = false;
+      // Optimistically drop the deleted ids from the visible list. We
+      // re-fetch on the next list action anyway, so this is just a
+      // smoother UX for the moment after the click.
+      state.list.items = state.list.items.slice(0, state.list.items.length);
+    },
+    bulkDeleteFailure(state, action: PayloadAction<string>) {
+      state.mutation.loading = false;
+      state.mutation.error = action.payload;
+    },
+    // TRASH (deleted customers list)
+    trashRequest(state, _action: PayloadAction<CustomerListQuery>) {
+      state.list.loading = true;
+      state.list.error = null;
+    },
+    trashSuccess(
+      state,
+      action: PayloadAction<{
+        items: Customer[];
+        pagination: CustomersState['list']['pagination'];
+        query: CustomerListQuery;
+      }>,
+    ) {
+      state.list.loading = false;
+      state.list.items = action.payload.items;
+      state.list.pagination = action.payload.pagination;
+      state.list.lastQuery = action.payload.query;
+      state.list.error = null;
+    },
+    trashFailure(state, action: PayloadAction<string>) {
+      state.list.loading = false;
+      state.list.error = action.payload;
+    },
+    // EXPORT CSV
+    exportRequest(_state, _action: PayloadAction<CustomerListQuery>) {
+      // no-op: side effect happens in the saga (open URL)
+    },
+    exportSuccess() {
+      // no-op
+    },
+    exportFailure(state, action: PayloadAction<string>) {
+      state.list.error = action.payload;
+    },
   },
 });
 
@@ -168,6 +235,18 @@ export const {
   deleteRequest,
   deleteSuccess,
   deleteFailure,
+  restoreRequest,
+  restoreSuccess,
+  restoreFailure,
+  bulkDeleteRequest,
+  bulkDeleteSuccess,
+  bulkDeleteFailure,
+  trashRequest,
+  trashSuccess,
+  trashFailure,
+  exportRequest,
+  exportSuccess,
+  exportFailure,
 } = slice.actions;
 
 export default slice.reducer;

@@ -463,6 +463,7 @@ export const seed = async (): Promise<void> => {
       const passwordHash = await hashPassword(ADMIN_PASSWORD);
       const admin = await authRepository.create({
         email: ADMIN_EMAIL,
+        username: 'admin',
         passwordHash,
         name: ADMIN_NAME,
         role: 'admin',

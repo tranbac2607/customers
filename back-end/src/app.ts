@@ -15,6 +15,8 @@ import { notFoundMiddleware } from '@/middlewares/notFound.middleware';
 import healthRouter from '@/modules/health/health.routes';
 import authRouter from '@/modules/auth/auth.routes';
 import customerRouter from '@/modules/customers/customer.routes';
+import usersRouter from '@/modules/users/users.routes';
+import activityLogRouter from '@/modules/users/activityLog.routes';
 
 export const createApp = (): Application => {
   const app = express();
@@ -55,6 +57,24 @@ export const createApp = (): Application => {
   });
   app.use('/api', limiter);
 
+  // Stricter rate limit on auth endpoints to slow down brute-force
+  // password guessing / credential stuffing. 10 attempts / 5 minutes
+  // per IP. Excludes /auth/refresh (called automatically and often).
+  const authLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      error: { code: 'RATE_LIMITED', message: 'Too many auth attempts, please slow down.' },
+    },
+  });
+  app.use('/api/auth/login', authLimiter);
+  app.use('/api/auth/register', authLimiter);
+  app.use('/api/auth/forgot-password', authLimiter);
+  app.use('/api/auth/reset-password', authLimiter);
+
   // Health (no rate limit effects since it returns fast)
   app.use('/api/health', healthRouter);
 
@@ -74,6 +94,8 @@ export const createApp = (): Application => {
   // Feature routes
   app.use('/api/auth', authRouter);
   app.use('/api/customers', customerRouter);
+  app.use('/api/users', usersRouter);
+  app.use('/api/activity-log', activityLogRouter);
 
   // Root
   app.get('/', (_req, res) => {

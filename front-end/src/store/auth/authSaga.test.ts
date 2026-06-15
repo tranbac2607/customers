@@ -3,8 +3,20 @@ import { loginFailure, loginRequest, loginSuccess } from './authSlice';
 import { handleLogin } from './authSaga';
 import type { ApiResponse, LoginResponse } from '@/types/api';
 
+const mockUser = {
+  id: 'u1',
+  email: 'admin@example.com',
+  username: 'admin',
+  name: 'Admin',
+  role: 'admin' as const,
+  status: 'active' as const,
+  emailVerified: true,
+  themePreference: 'light' as const,
+  createdAt: '2025-01-01T00:00:00Z',
+};
+
 describe('handleLogin saga', () => {
-  const action = loginRequest({ email: 'admin@example.com', password: 'Admin@123' });
+  const action = loginRequest({ identifier: 'admin@example.com', password: 'Admin@123' });
 
   it('dispatches loginSuccess with user on 2xx success', () => {
     const gen = handleLogin(action);
@@ -16,13 +28,7 @@ describe('handleLogin saga', () => {
         accessToken: 'A',
         refreshToken: 'R',
         expiresIn: 900,
-        user: {
-          id: 'u1',
-          email: 'admin@example.com',
-          name: 'Admin',
-          role: 'admin',
-          createdAt: '2025-01-01T00:00:00Z',
-        },
+        user: mockUser,
       },
     };
 

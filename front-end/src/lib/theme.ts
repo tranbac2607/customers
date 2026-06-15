@@ -83,7 +83,9 @@ export const darkTheme: ThemeConfig = {
   },
 };
 
-export type ThemeMode = 'light' | 'dark';
+// App is light-only now. Kept the type as a single literal so
+// existing imports keep compiling, but every caller should treat
+// it as a constant.
+export type ThemeMode = 'light';
 
-export const getTheme = (mode: ThemeMode): ThemeConfig =>
-  mode === 'dark' ? darkTheme : lightTheme;
+export const getTheme = (_mode: ThemeMode): ThemeConfig => lightTheme;

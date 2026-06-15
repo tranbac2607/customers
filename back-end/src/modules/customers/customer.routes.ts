@@ -56,6 +56,10 @@ router.use(authenticate);
  *       401: { description: Unauthorized }
  */
 router.get('/', validate(listCustomersQuerySchema, 'query'), asyncHandler(customerController.list));
+router.get('/trash', validate(listCustomersQuerySchema, 'query'), asyncHandler(customerController.listTrashed));
+router.get('/export', asyncHandler(customerController.exportCsv));
+router.post('/bulk-delete', asyncHandler(customerController.bulkDelete));
+router.post('/bulk-restore', asyncHandler(customerController.bulkRestore));
 
 /**
  * @openapi
@@ -139,6 +143,8 @@ router.put(
  *       404: { description: Not found }
  */
 router.delete('/:id', validate(idParamSchema, 'params'), asyncHandler(customerController.remove));
+router.post('/:id/restore', validate(idParamSchema, 'params'), asyncHandler(customerController.restore));
+router.delete('/:id/hard', validate(idParamSchema, 'params'), asyncHandler(customerController.hardDelete));
 
 // Swagger component schemas (registered once via app.ts registration of paths file)
 export const customerSchemas = {

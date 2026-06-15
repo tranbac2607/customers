@@ -8,6 +8,8 @@ import { loginFailure, loginRequest, loginSuccess, type LoginErrorCode } from '.
 // experience. Anything else falls back to UNKNOWN.
 const KNOWN_LOGIN_ERROR_CODES: ReadonlySet<LoginErrorCode> = new Set<LoginErrorCode>([
   'INVALID_CREDENTIALS',
+  'ACCOUNT_DISABLED',
+  'EMAIL_NOT_VERIFIED',
   'SERVER_ERROR',
   'NETWORK_ERROR',
   'UNKNOWN',
@@ -27,12 +29,9 @@ export function* handleLogin(action: ReturnType<typeof loginRequest>): Generator
     );
     const body = res.data;
     if (!body.success) {
-      yield put(
-        loginFailure({
-          message: body.error.message,
-          code: toLoginErrorCode(body.error.code, 'UNKNOWN'),
-        }),
-      );
+      // 403 from BE could be ACCOUNT_DISABLED or EMAIL_NOT_VERIFIED
+      const code = toLoginErrorCode(body.error.code, 'UNKNOWN');
+      yield put(loginFailure({ message: body.error.message, code }));
       return;
     }
     // Cookies are set by the backend as httpOnly Set-Cookie headers.
@@ -41,12 +40,21 @@ export function* handleLogin(action: ReturnType<typeof loginRequest>): Generator
   } catch (err) {
     const e = err as AxiosError<ApiFailure>;
     const status = e.response?.status;
-    const code =
-      status === 401
-        ? 'INVALID_CREDENTIALS'
-        : status && status >= 500
-          ? 'SERVER_ERROR'
-          : 'NETWORK_ERROR';
+    const beCode = e.response?.data?.error?.code;
+    let code: LoginErrorCode;
+    if (beCode === 'FORBIDDEN') {
+      // Backend distinguishes disabled vs unverified via message; we
+      // fall back to ACCOUNT_DISABLED as the most common reason.
+      code = e.response?.data?.error?.message?.toLowerCase().includes('verify')
+        ? 'EMAIL_NOT_VERIFIED'
+        : 'ACCOUNT_DISABLED';
+    } else if (status === 401) {
+      code = 'INVALID_CREDENTIALS';
+    } else if (status && status >= 500) {
+      code = 'SERVER_ERROR';
+    } else {
+      code = 'NETWORK_ERROR';
+    }
     const msg = e.response?.data?.error?.message ?? e.message ?? 'Login failed';
     yield put(loginFailure({ message: msg, code }));
   }

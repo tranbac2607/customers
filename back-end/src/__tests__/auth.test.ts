@@ -24,6 +24,7 @@ beforeAll(async () => {
   const passwordHash = await hashPassword('Admin@123');
   await authRepository.create({
     email: 'admin@example.com',
+    username: 'admin',
     passwordHash,
     name: 'Admin',
     role: 'admin',
@@ -41,19 +42,28 @@ describe('Auth', () => {
   it('POST /api/auth/login with wrong password → 401', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'admin@example.com', password: 'WrongPass123!' });
+      .send({ identifier: 'admin@example.com', password: 'WrongPass123!' });
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
+  });
+
+  it('POST /api/auth/login with username instead of email → 200', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ identifier: 'admin', password: 'Admin@123' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.user.email).toBe('admin@example.com');
   });
 
   it('POST /api/auth/login with correct creds → 200 + tokens', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'admin@example.com', password: 'Admin@123' });
+      .send({ identifier: 'admin@example.com', password: 'Admin@123' });
     expect(res.status).toBe(200);
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).toBeDefined();
     expect(res.body.data.user.email).toBe('admin@example.com');
+    expect(res.body.data.user.username).toBe('admin');
   });
 
   it('GET /api/auth/me without token → 401', async () => {
@@ -64,7 +74,7 @@ describe('Auth', () => {
   it('GET /api/auth/me with token → 200', async () => {
     const login = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'admin@example.com', password: 'Admin@123' });
+      .send({ identifier: 'admin@example.com', password: 'Admin@123' });
     const token = login.body.data.accessToken;
     const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
@@ -74,7 +84,7 @@ describe('Auth', () => {
   it('POST /api/auth/refresh rotates tokens', async () => {
     const login = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'admin@example.com', password: 'Admin@123' });
+      .send({ identifier: 'admin@example.com', password: 'Admin@123' });
     const oldRefresh = login.body.data.refreshToken;
     const res = await request(app).post('/api/auth/refresh').send({ refreshToken: oldRefresh });
     expect(res.status).toBe(200);

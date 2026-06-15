@@ -3,11 +3,16 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Card, Space, Button, Typography } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { deleteRequest, listRequest } from '@/store/customers/customersSlice';
+import {
+  bulkDeleteRequest,
+  deleteRequest,
+  exportRequest,
+  listRequest,
+} from '@/store/customers/customersSlice';
 import type { CustomerListQuery } from '@/store/customers/customerTypes';
 import {
   CustomerSearch,
@@ -22,6 +27,7 @@ const EMPTY_QUERY: CustomerSearchValues = {};
 
 export function CustomersPageContent() {
   const dispatch = useAppDispatch();
+  const me = useAppSelector((s) => s.auth.user);
   const { items, loading, pagination, lastQuery } = useAppSelector((s) => s.customers.list);
   const mutationLoading = useAppSelector((s) => s.customers.mutation.loading);
   const mutationError = useAppSelector((s) => s.customers.mutation.error);
@@ -65,8 +71,11 @@ export function CustomersPageContent() {
       ...state.query,
       page: state.page,
       limit: state.limit,
-      sortBy: state.sortBy as CustomerListQuery['sortBy'],
-      order: state.order,
+      // state.sortBy is typed as string by useListQuery's generic
+      // union; the actual value is constrained to CustomerListQuery's
+      // SortBy at the call site.
+      sortBy: (state.sortBy ?? 'createdAt') as CustomerListQuery['sortBy'],
+      order: (state.order ?? 'desc') as CustomerListQuery['order'],
     };
     dispatch(listRequest(q));
   }, [state, dispatch]);
@@ -128,6 +137,11 @@ export function CustomersPageContent() {
           </Paragraph>
         </div>
         <Space wrap>
+          {me?.role === 'admin' && (
+            <Link href="/customers/trash">
+              <Button icon={<DeleteOutlined />}>Trash</Button>
+            </Link>
+          )}
           <Link href="/customers/new">
             <Button type="primary" icon={<PlusOutlined />}>
               New customer
@@ -153,6 +167,15 @@ export function CustomersPageContent() {
           onPageChange={setPage}
           onLimitChange={setLimit}
           onDelete={(id) => dispatch(deleteRequest(id))}
+          onBulkDelete={(ids) => {
+            dispatch(bulkDeleteRequest(ids));
+            toast.success(`Deleted ${ids.length} customers`);
+          }}
+          onExport={() => {
+            // Cast: useListQuery's state is loosely typed; the BE only
+            // cares about the same fields the list endpoint accepts.
+            dispatch(exportRequest(state as unknown as CustomerListQuery));
+          }}
         />
       </Card>
     </div>
