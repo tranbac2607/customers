@@ -67,10 +67,25 @@ const isProd = env.NODE_ENV === 'production';
 
 const setAuthCookies = (res: Response, accessToken: string, refreshToken: string): void => {
   const sameSite: 'none' | 'lax' = isProd ? 'none' : 'lax';
+  // The FE (Vercel) and the BE (Render) live on different origins, so
+  // this is a cross-site cookie by definition. `SameSite=None` is the
+  // baseline, but Safari ITP and Chrome Incognito still drop those
+  // unless the cookie also carries `Partitioned` (the CHIPS proposal
+  // — Cookies Having Independent Partitioned State). With Partitioned,
+  // the browser scopes the cookie to the top-level site that initiated
+  // the request (e.g. customers-front-end.vercel.app), so a login
+  // initiated from there can be read on subsequent calls to the BE
+  // even when the user is browsing in Strict tracking-protection mode.
+  //
+  // Partitioned is only valid with Secure=true, which we already set
+  // in production. In dev we omit it (Secure=false would make
+  // Partitioned a no-op anyway).
+  const partitioned = isProd;
   res.cookie(COOKIE_NAMES.accessToken, accessToken, {
     httpOnly: true,
     secure: isProd,
     sameSite,
+    partitioned,
     path: '/',
     maxAge: ACCESS_TTL_SECONDS * 1000,
   });
@@ -78,14 +93,31 @@ const setAuthCookies = (res: Response, accessToken: string, refreshToken: string
     httpOnly: true,
     secure: isProd,
     sameSite,
+    partitioned,
     path: '/',
     maxAge: REFRESH_TTL_SECONDS * 1000,
   });
 };
 
 const clearAuthCookies = (res: Response): void => {
-  res.clearCookie(COOKIE_NAMES.accessToken, { path: '/' });
-  res.clearCookie(COOKIE_NAMES.refreshToken, { path: '/' });
+  // Mirror the attributes used in setAuthCookies so the browser
+  // actually matches the cookie it's about to delete. With
+  // SameSite=None / Partitioned, the clear MUST carry the same
+  // attributes or the browser skips it.
+  const sameSite: 'none' | 'lax' = isProd ? 'none' : 'lax';
+  const partitioned = isProd;
+  res.clearCookie(COOKIE_NAMES.accessToken, {
+    path: '/',
+    secure: isProd,
+    sameSite,
+    partitioned,
+  });
+  res.clearCookie(COOKIE_NAMES.refreshToken, {
+    path: '/',
+    secure: isProd,
+    sameSite,
+    partitioned,
+  });
 };
 
 const newOpaqueToken = (): { raw: string; hash: string } => {
