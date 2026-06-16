@@ -1,39 +1,25 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { Layout, Menu, Button, Drawer, Grid } from 'antd';
 import {
-  Layout,
-  Menu,
-  Avatar,
-  Dropdown,
-  Space,
-  Typography,
-  Button,
-  Spin,
-  Drawer,
-  Grid,
-} from 'antd';
-import {
-  TeamOutlined,
-  LogoutOutlined,
-  UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CloseOutlined,
   HomeOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { AxiosError } from 'axios';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { hydrateUser, logout } from '@/store/auth/authSlice';
+import { hydrateUser } from '@/store/auth/authSlice';
 import { api } from '@/lib/axios';
+import { UserMenu } from './UserMenu';
 import type { ApiFailure, ApiResponse } from '@/types/api';
 import type { UserResponse } from '@/store/auth/authTypes';
 
 const { Header, Sider, Content } = Layout;
-const { Text } = Typography;
 const { useBreakpoint } = Grid;
 
 const menuItems = [
@@ -155,51 +141,6 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await api.post('/auth/logout', {});
-      toast.success('Signed out');
-    } catch {
-      // Best-effort: even if BE call fails, clear local state.
-    } finally {
-      dispatch(logout());
-      router.replace('/login');
-    }
-  };
-
-  const userMenu = {
-    items: [
-      {
-        key: 'email',
-        icon: <UserOutlined />,
-        label: <Text type="secondary">{user?.email}</Text>,
-        disabled: true,
-      },
-      {
-        key: 'profile',
-        icon: <UserOutlined />,
-        label: <Link href="/profile">Profile</Link>,
-      },
-      {
-        key: 'admin-users',
-        icon: <TeamOutlined />,
-        label: <Link href="/admin/users">Admin: Users</Link>,
-      },
-      {
-        key: 'admin-activity',
-        icon: <TeamOutlined />,
-        label: <Link href="/admin/activity-log">Admin: Activity log</Link>,
-      },
-      { type: 'divider' as const },
-      {
-        key: 'logout',
-        icon: <LogoutOutlined />,
-        label: 'Sign out',
-        onClick: handleLogout,
-      },
-    ],
-  };
-
   const headerPadding = isMobile ? '0 12px' : '0 24px';
   const contentPadding = isMobile ? 12 : 24;
 
@@ -283,45 +224,7 @@ export function DashboardLayoutContent({ children }: { children: ReactNode }) {
             style={{ fontSize: 18 }}
           />
           <div style={{ display: 'flex', alignItems: 'center', height: 32 }}>
-            <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto auto',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: 'pointer',
-                  height: 32,
-                }}
-              >
-                {user?.avatarUrl ? (
-                  <Avatar
-                    size={32}
-                    src={user.avatarUrl}
-                    alt={user.name}
-                    style={{ background: 'transparent' }}
-                  />
-                ) : (
-                  <Avatar style={{ background: user ? '#1677ff' : '#d9d9d9' }}>
-                    {user ? user.name[0]?.toUpperCase() : <UserOutlined />}
-                  </Avatar>
-                )}
-                {!isMobile && (
-                  <Text
-                    strong
-                    style={{
-                      maxWidth: 160,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      lineHeight: '32px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {user?.name ?? <Spin size="small" />}
-                  </Text>
-                )}
-              </div>
-            </Dropdown>
+            <UserMenu isMobile={isMobile} />
           </div>
         </Header>
         <Content
