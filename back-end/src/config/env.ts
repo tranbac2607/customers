@@ -23,8 +23,15 @@ const envSchema = z.object({
     .default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
 
-  // Email
-  RESEND_API_KEY: z.string().optional(),
+  // Email — SMTP (Gmail by default; SMTP_HOST/SMTP_PORT can override
+  // for any other provider). SMTP_USER and SMTP_PASS are both optional:
+  // if either is missing, the email service falls back to logging
+  // every "send" to stdout (see email.service.ts).
+  SMTP_HOST: z.string().default('smtp.gmail.com'),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_SECURE: z.coerce.boolean().default(true),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().default('no-reply@customers.local'),
   APP_BASE_URL: z.string().default('http://localhost:3000'),
 

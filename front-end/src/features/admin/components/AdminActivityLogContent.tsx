@@ -13,13 +13,16 @@ import {
   Typography,
   Tooltip,
   message,
+  DatePicker,
 } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, ClearOutlined } from '@ant-design/icons';
+import dayjs, { type Dayjs } from 'dayjs';
 import { useAppSelector } from '@/store/hooks';
 import { api } from '@/lib/axios';
 import type { ApiResponse, PaginationMeta } from '@/types/api';
 
 const { Title, Paragraph } = Typography;
+const { RangePicker } = DatePicker;
 
 interface ActivityLogItem {
   _id: string;
@@ -81,6 +84,8 @@ export function AdminActivityLogContent() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState('');
   const [action, setAction] = useState<string | undefined>();
+  /** [from, to] as Dayjs objects, or null when no range filter is set. */
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
@@ -102,6 +107,17 @@ export function AdminActivityLogContent() {
       });
       if (userId) params.set('userId', userId);
       if (action) params.set('action', action);
+      // Send full ISO datetime so the BE can apply the user's exact
+      // hour:minute bounds. The RangePicker defaults to 00:00 for
+      // `from` and 23:59 for `to`, so users who don't touch the time
+      // still get whole-day semantics — and the BE's old end-of-day
+      // snap (for clients that send date-only strings) still works
+      // as a fallback.
+      if (dateRange) {
+        const [from, to] = dateRange;
+        if (from) params.set('from', from.toISOString());
+        if (to) params.set('to', to.toISOString());
+      }
       const res = await api.get<ApiResponse<ActivityLogResponse>>(
         `/activity-log?${params.toString()}`,
       );
@@ -120,11 +136,24 @@ export function AdminActivityLogContent() {
   useEffect(() => {
     if (isAdmin) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, action, isAdmin]);
+  }, [page, limit, action, isAdmin, dateRange]);
 
   const onSearch = () => {
     setPage(1);
     load();
+  };
+
+  /**
+   * Reset every filter back to its empty state and jump back to page
+   * 1. The load effect picks up the new state automatically, so the
+   * table re-fetches the unfiltered list — no need to call `load`
+   * explicitly here.
+   */
+  const onClearFilters = () => {
+    setUserId('');
+    setAction(undefined);
+    setDateRange(null);
+    setPage(1);
   };
 
   if (!isAdmin) return null;
@@ -156,8 +185,45 @@ export function AdminActivityLogContent() {
             style={{ width: 220 }}
             options={ACTION_OPTIONS}
           />
+          <RangePicker
+            value={dateRange}
+            // Dayjs[] is what RangePicker.onChange gives us, but the
+            // empty state is `null` (not `[null, null]`). Normalize
+            // here so the state type stays clean.
+            onChange={(values) => setDateRange(values as [Dayjs | null, Dayjs | null] | null)}
+            // Setting the date range auto-fires the load effect
+            // (dateRange is in the dep list), so no need to also
+            // call onSearch. Also: when either bound is cleared the
+            // effect re-runs with `dateRange === null`, removing the
+            // filter.
+            allowEmpty={[true, true]}
+            placeholder={['From', 'To']}
+            // `showTime` makes the picker include hour:minute
+            // selectors. Default values: from=00:00, to=23:59 — so
+            // users who don't touch the time still get the same
+            // "whole day" semantics as before.
+            showTime={{ defaultValue: [dayjs('00:00:00', 'HH:mm:ss'), dayjs('23:59:59', 'HH:mm:ss')] }}
+            format="YYYY-MM-DD HH:mm"
+            // Cap the range at 1 year to avoid pathological queries
+            // that the BE would happily serve but that would dump
+            // tens of thousands of rows into the table.
+            disabledDate={(current) => {
+              if (!current) return false;
+              if (dateRange?.[0] && current.isBefore(dateRange[0], 'day')) return true;
+              if (dateRange?.[1] && current.isAfter(dateRange[1], 'day')) return true;
+              // Don't allow picking more than 1 year out — there is
+              // no useful audit data that old in this demo, and
+              // unbounded ranges are slow.
+              const oneYearAgo = dayjs().subtract(1, 'year').startOf('day');
+              const oneYearAhead = dayjs().add(1, 'year').endOf('day');
+              return current.isBefore(oneYearAgo) || current.isAfter(oneYearAhead);
+            }}
+          />
           <Button icon={<SearchOutlined />} type="primary" onClick={onSearch}>
             Search
+          </Button>
+          <Button icon={<ClearOutlined />} onClick={onClearFilters} disabled={!userId && !action && !dateRange}>
+            Clear
           </Button>
           <Button icon={<ReloadOutlined />} onClick={load}>
             Refresh

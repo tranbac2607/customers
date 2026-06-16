@@ -47,7 +47,12 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
   // a placeholder, etc.).
   if (!user) return null;
 
-  const items = [
+  const isAdmin = user.role === 'admin';
+
+  // Build the items list conditionally so the divider only appears
+  // when there ARE admin items below it (otherwise it would sit
+  // right above "Sign out" and look like a stray line).
+  const items: NonNullable<React.ComponentProps<typeof Dropdown>['menu']>['items'] = [
     {
       key: 'email',
       icon: <UserOutlined />,
@@ -59,16 +64,21 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
       icon: <UserOutlined />,
       label: <Link href="/profile">Profile</Link>,
     },
-    {
-      key: 'admin-users',
-      icon: <TeamOutlined />,
-      label: <Link href="/admin/users">Admin: Users</Link>,
-    },
-    {
-      key: 'admin-activity',
-      icon: <TeamOutlined />,
-      label: <Link href="/admin/activity-log">Admin: Activity log</Link>,
-    },
+    ...(isAdmin
+      ? [
+          { type: 'divider' as const },
+          {
+            key: 'admin-users',
+            icon: <TeamOutlined />,
+            label: <Link href="/admin/users">Admin: Users</Link>,
+          },
+          {
+            key: 'admin-activity',
+            icon: <TeamOutlined />,
+            label: <Link href="/admin/activity-log">Admin: Activity log</Link>,
+          },
+        ]
+      : []),
     { type: 'divider' as const },
     {
       key: 'logout',

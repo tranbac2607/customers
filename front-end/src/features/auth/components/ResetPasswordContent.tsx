@@ -132,6 +132,7 @@ export function ResetPasswordContent() {
                 { min: 8, message: 'At least 8 characters' },
                 { pattern: /[A-Za-z]/, message: 'Must contain a letter' },
                 { pattern: /[0-9]/, message: 'Must contain a number' },
+                { pattern: /[^A-Za-z0-9]/, message: 'Must contain a special character' },
               ]}
             >
               <Input.Password prefix={<LockOutlined />} placeholder="At least 8 characters" autoComplete="new-password" />

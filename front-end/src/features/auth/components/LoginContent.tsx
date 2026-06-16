@@ -101,8 +101,14 @@ export function LoginContent() {
     if (errorCode && errorCode !== lastErrorCode.current) {
       const msg = errorMessageFor(errorCode);
       if (msg) toast.error(msg);
-      lastErrorCode.current = errorCode;
     }
+    // Always sync the ref to the current errorCode, even when it
+    // transitions to null (loginRequest clears it). Without this,
+    // the second failed attempt of the same kind would be deduped
+    // by the equality check above: null → 'INVALID_CREDENTIALS'
+    // (toast fires) → null → 'INVALID_CREDENTIALS' (ref still
+    // 'INVALID_CREDENTIALS', no toast on the 2nd failure).
+    lastErrorCode.current = errorCode;
   }, [errorCode]);
 
   const onFinish = (values: LoginValues) => {

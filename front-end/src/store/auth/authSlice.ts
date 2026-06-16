@@ -17,11 +17,18 @@ export interface AuthState {
   errorCode: LoginErrorCode | null;
   isAuthenticated: boolean;
   /**
-   * True once the dashboard's mount-once /me probe has completed
-   * (success or failure). Pages that gate on `isAuthenticated` —
-   * Home, /admin/users, /customers/trash — use this to know when
-   * the value is final, instead of briefly showing the unauth UI
-   * before /me resolves.
+   * True once the auth state is final. Set by:
+   *   - `hydrateUser` (the /me probe resolves either way)
+   *   - `loginSuccess` / `loginFailure` (a manual login attempt
+   *     resolves either way)
+   *
+   * Pages that gate on `isAuthenticated` (Home, /admin/users,
+   * /customers/trash, /profile) use this to know when the value
+   * is final, instead of briefly showing the unauth UI before the
+   * probe/login resolves. Without this, post-login the dashboard
+   * layout skips the /me probe (the cookie is already known
+   * good) and the flag would never flip — the user would see an
+   * infinite spinner on /profile.
    */
   authChecked: boolean;
 }
@@ -50,18 +57,35 @@ const slice = createSlice({
       state.errorCode = null;
       state.user = action.payload.user;
       state.isAuthenticated = true;
+      // The login attempt itself resolves the auth state — we
+      // don't need to re-probe /me. Without this, pages that gate
+      // on authChecked (e.g. /profile) spin forever because the
+      // dashboard layout skips the /me probe when a user is
+      // already in Redux.
+      state.authChecked = true;
     },
     loginFailure(state, action: PayloadAction<{ message: string; code: LoginErrorCode }>) {
       state.loading = false;
       state.error = action.payload.message;
       state.errorCode = action.payload.code;
       state.isAuthenticated = false;
+      // Failed login is still a known outcome — the user is
+      // definitively NOT authenticated, so any auth-gated page
+      // can render its unauth state (typically: redirect to
+      // /login) without waiting for a /me probe.
+      state.authChecked = true;
     },
     logout(state) {
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
       state.errorCode = null;
+      // Reset authChecked so a subsequent /me probe can re-run
+      // and confirm there is no lingering session. (If we left
+      // it true, an auth-gated page would render the unauth
+      // branch immediately without ever verifying that the BE
+      // cookie is truly gone.)
+      state.authChecked = false;
     },
     /**
      * Restore user from /me (used on app mount to rehydrate from cookie).

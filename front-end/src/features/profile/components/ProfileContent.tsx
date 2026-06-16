@@ -291,7 +291,8 @@ export function ProfileContent() {
                   style={{ maxWidth: 480 }}
                 >
                   <Paragraph type="secondary">
-                    Use a strong password (8+ characters, with at least one letter and one number).
+                    Use a strong password (8+ characters, with at least one letter, one number, and
+                    one special character).
                   </Paragraph>
                   <Form.Item
                     label="Current password"
@@ -308,6 +309,7 @@ export function ProfileContent() {
                       { min: 8, message: 'At least 8 characters' },
                       { pattern: /[A-Za-z]/, message: 'Must contain a letter' },
                       { pattern: /[0-9]/, message: 'Must contain a number' },
+                      { pattern: /[^A-Za-z0-9]/, message: 'Must contain a special character' },
                     ]}
                   >
                     <Input.Password prefix={<LockOutlined />} autoComplete="new-password" />

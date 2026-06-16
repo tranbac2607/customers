@@ -173,6 +173,10 @@ export function RegisterContent() {
                   pattern: /[0-9]/,
                   message: 'Must contain at least one number',
                 },
+                {
+                  pattern: /[^A-Za-z0-9]/,
+                  message: 'Must contain at least one special character',
+                },
               ]}
             >
               <Input.Password prefix={<LockOutlined />} placeholder="At least 8 characters" autoComplete="new-password" />

@@ -82,12 +82,33 @@ export const activityLogService = {
     }
   },
 
-  async list(opts: { userId?: string; action?: ActivityAction; page?: number; limit?: number }) {
+  async list(opts: {
+    userId?: string;
+    action?: ActivityAction;
+    page?: number;
+    limit?: number;
+    /**
+     * Inclusive lower bound on `createdAt`. The FE passes calendar
+     * dates ("2024-01-15"); we treat them as start-of-day UTC so the
+     * filter is intuitive regardless of the server's local timezone.
+     */
+    from?: Date;
+    /** Inclusive upper bound on `createdAt` (end-of-day UTC). */
+    to?: Date;
+  }) {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(100, Math.max(1, opts.limit ?? 20));
     const filter: Record<string, unknown> = {};
     if (opts.userId) filter.userId = opts.userId;
     if (opts.action) filter.action = opts.action;
+    if (opts.from || opts.to) {
+      // `$gte` / `$lte` both inclusive; the controller already snapped
+      // `to` to end-of-day so a same-day range still works as expected.
+      const range: Record<string, Date> = {};
+      if (opts.from) range.$gte = opts.from;
+      if (opts.to) range.$lte = opts.to;
+      filter.createdAt = range;
+    }
     const [items, total] = await Promise.all([
       ActivityLog.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
       ActivityLog.countDocuments(filter),
